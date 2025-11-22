@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { parseEther } from 'viem';
 import styles from './page.module.css';
 
 interface PaymentResponse {
@@ -27,24 +30,64 @@ interface SuccessResponse {
 }
 
 export default function Home() {
+  // User setup state
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [userWallet, setUserWallet] = useState<{ address: string; walletId: string } | null>(null);
+  const [isSettingUp, setIsSettingUp] = useState(false);
+  
+  // Purchase flow state
   const [query, setQuery] = useState('');
-  const [productPrice, setProductPrice] = useState('');
   const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle');
   const [statusTitle, setStatusTitle] = useState('');
   const [statusContent, setStatusContent] = useState<any>(null);
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
   const [currentPaymentData, setCurrentPaymentData] = useState<any>(null);
 
-  const AGENT_FEE = 2.00; // Fixed agent fee in USDC
+  const AGENT_FEE = 0.001; // Fixed agent fee in ETH
+
+  // Wallet hooks
+  const { address, isConnected } = useAccount();
+  const { sendTransaction, data: hash, isPending: isWritePending, error: writeError } = useSendTransaction();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   const resetForm = () => {
     setQuery('');
-    setProductPrice('');
     setStatus('idle');
     setStatusTitle('');
     setStatusContent(null);
     setCurrentPaymentId(null);
     setCurrentPaymentData(null);
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSettingUp(true);
+
+    try {
+      const response = await fetch('/api/user/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserWallet({
+          address: data.wallet.address,
+          walletId: data.wallet.walletId,
+        });
+        console.log('✅ User wallet loaded:', data.wallet.address);
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (error: any) {
+      alert('Failed to create wallet: ' + error.message);
+    } finally {
+      setIsSettingUp(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,26 +96,19 @@ export default function Home() {
   };
 
   const handlePurchaseRequest = async () => {
-    // Validate product price
-    const price = parseFloat(productPrice);
-    if (isNaN(price) || price <= 0) {
-      showError('Please enter a valid product price');
-      return;
-    }
-
     setStatus('pending');
-    setStatusTitle('Requesting Agent Service...');
+    setStatusTitle('Looking up product price...');
     setStatusContent({ loading: true });
 
     try {
       // Step 1: Request agent service (will get 402)
+      // Agent will look up the price automatically
       const response = await fetch('/api/agent/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           request: {
             query: query,
-            productPrice: price,
           },
         }),
       });
@@ -97,41 +133,112 @@ export default function Home() {
   const showPaymentRequired = (data: PaymentResponse) => {
     setStatus('pending');
     setStatusTitle('💳 Payment Required');
+    
     setStatusContent({
       payment: data.payment,
       message: data.message,
       waitingForPayment: true,
+      isConnected,
+      userWalletAddress: userWallet?.address,
     });
   };
 
   const handleManualPayment = () => {
-    simulatePayment();
+    // Check if wallet is connected
+    if (!isConnected) {
+      showError('Please connect your wallet first');
+      return;
+    }
+
+    // Check if user has a CDP wallet
+    if (!userWallet) {
+      showError('No user wallet found');
+      return;
+    }
+
+    // Get payment amount from current payment data
+    if (!currentPaymentData || !currentPaymentData.payment) {
+      showError('No payment data available');
+      return;
+    }
+
+    const amount = currentPaymentData.payment.amount;
+
+    // Initiate real ETH transfer to user's CDP wallet
+    sendETHPayment(amount, userWallet.address);
   };
 
-  const simulatePayment = async () => {
+  const sendETHPayment = async (amount: string, recipient: string) => {
+    if (!userWallet) {
+      showError('No user wallet found');
+      return;
+    }
+
     setStatus('pending');
-    setStatusTitle('🔄 Processing Payment...');
-    setStatusContent({ processing: true });
+    setStatusTitle('💳 Waiting for Wallet Approval...');
+    setStatusContent({ processing: true, message: 'Please approve the transaction in your wallet' });
 
     try {
-      // Simulate payment proof
+      // Convert amount to Wei (18 decimals for ETH)
+      const amountInWei = parseEther(amount);
+
+      // Send ETH transfer to user's CDP wallet
+      sendTransaction({
+        to: userWallet.address as `0x${string}`,
+        value: amountInWei,
+      });
+    } catch (error: any) {
+      console.error('❌ Payment error:', error);
+      showError('Payment failed: ' + error.message);
+    }
+  };
+
+  // Watch for write errors
+  React.useEffect(() => {
+    if (writeError) {
+      console.error('❌ Write contract error:', writeError);
+      showError('Transaction failed: ' + (writeError.message || 'Unknown error'));
+    }
+  }, [writeError]);
+
+  // Watch for transaction being confirmed on-chain
+  React.useEffect(() => {
+    if (isConfirming && hash) {
+      setStatus('pending');
+      setStatusTitle('⏳ Confirming Transaction...');
+      setStatusContent({ processing: true, message: 'Waiting for on-chain confirmation...' });
+    }
+  }, [isConfirming, hash]);
+
+  // Watch for transaction confirmation
+  React.useEffect(() => {
+    if (isConfirmed && hash) {
+      // Transaction confirmed! Now submit to backend
+      submitPaymentProof(hash);
+    }
+  }, [isConfirmed, hash]);
+
+  const submitPaymentProof = async (txHash: `0x${string}`) => {
+    setStatus('pending');
+    setStatusTitle('🔄 Verifying Payment...');
+    setStatusContent({ processing: true, message: 'Confirming transaction on-chain...' });
+
+    try {
+      // Create payment proof with real transaction hash
       const paymentProof = {
         paymentId: currentPaymentId!,
-        signature: '0x' + Array(130).fill(0).map(() => 
-          Math.floor(Math.random() * 16).toString(16)).join(''),
-        transactionHash: '0x' + Array(64).fill(0).map(() => 
-          Math.floor(Math.random() * 16).toString(16)).join(''),
+        transactionHash: txHash,
+        from: address!,
+        signature: txHash, // Using tx hash as proof for now
       };
 
       // Submit payment and execute agent workflow
-      const price = parseFloat(productPrice);
       const response = await fetch('/api/agent/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           request: {
             query: query,
-            productPrice: price,
           },
           paymentProof,
         }),
@@ -161,13 +268,62 @@ export default function Home() {
     setStatusContent({ error: message });
   };
 
+  // Show phone number input first if user hasn't set up wallet
+  if (!userWallet) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
+          <p className={styles.subtitle}>
+            Enter your phone number to get started
+          </p>
+
+          <form onSubmit={handlePhoneSubmit} className={styles.form}>
+            <div className={styles.formGroup}>
+              <label htmlFor="phoneNumber">Phone Number</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+1234567890"
+                required
+                className={styles.priceInput}
+              />
+              <p className={styles.helperText}>
+                💡 We'll create a secure wallet for you using Coinbase CDP.
+                Your wallet will be linked to this phone number.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              className={styles.btnPrimary}
+              disabled={isSettingUp}
+            >
+              {isSettingUp ? 'Creating Wallet...' : 'Continue'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
-        <p className={styles.subtitle}>
-          Test the x402 payment protocol with a mock purchasing agent
-        </p>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
+            <p className={styles.subtitle}>
+              Real USDC payments on Base Sepolia
+            </p>
+            <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
+              📱 Wallet: {userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}
+            </p>
+          </div>
+          <ConnectButton />
+        </div>
 
         <div className={styles.pricingInfo}>
           <h3>💰 Payment Structure</h3>
@@ -192,26 +348,11 @@ export default function Home() {
               id="query"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g., Buy me the cheapest USB-C charger available on Amazon"
+              placeholder="e.g., USB-C charger, headphones, laptop..."
               required
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="productPrice">Expected Product Price (USDC)</label>
-            <input
-              type="number"
-              id="productPrice"
-              value={productPrice}
-              onChange={(e) => setProductPrice(e.target.value)}
-              placeholder="e.g., 15.99"
-              step="0.01"
-              min="0.01"
-              required
-              className={styles.priceInput}
             />
             <p className={styles.helperText}>
-              Total payment will be: <strong>{AGENT_FEE.toFixed(2)} USDC</strong> (agent fee) + <strong>{productPrice || '0.00'} USDC</strong> (product) = <strong>{(AGENT_FEE + parseFloat(productPrice || '0')).toFixed(2)} USDC</strong>
+              💡 The agent will automatically look up the price for you!
             </p>
           </div>
 
@@ -222,9 +363,13 @@ export default function Home() {
             <button
               type="button"
               className={styles.btnSecondary}
-              onClick={resetForm}
+              onClick={() => {
+                resetForm();
+                setUserWallet(null);
+                setPhoneNumber('');
+              }}
             >
-              Reset
+              Change Phone Number
             </button>
           </div>
         </form>
@@ -257,7 +402,7 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
     return (
       <>
         <div className={styles.spinner}></div>
-        <p>Verifying payment with facilitator...</p>
+        <p>{content.message || 'Processing...'}</p>
       </>
     );
   }
@@ -268,23 +413,34 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
         <div className={styles.paymentDetails}>
           <strong>Payment ID:</strong> {content.payment.id}
           <br />
-          <strong>Product Price:</strong> {content.payment.breakdown.productPrice} USDC
+          <strong>Product Price:</strong> {content.payment.breakdown.productPrice} ETH
           <br />
-          <strong>Agent Fee:</strong> {content.payment.breakdown.agentFee} USDC
+          <strong>Agent Fee:</strong> {content.payment.breakdown.agentFee} ETH
           <br />
-          <strong>Total Amount:</strong> <span style={{ color: '#667eea', fontSize: '18px', fontWeight: 'bold' }}>{content.payment.breakdown.total} USDC</span>
+          <strong>Total Amount:</strong> <span style={{ color: '#667eea', fontSize: '18px', fontWeight: 'bold' }}>{content.payment.breakdown.total} ETH</span>
           <br />
-          <strong>Network:</strong> base
+          <strong>Network:</strong> Base Sepolia
+          <br />
+          <strong>Your Wallet:</strong> {content.userWalletAddress ? `${content.userWalletAddress.slice(0, 6)}...${content.userWalletAddress.slice(-4)}` : 'N/A'}
         </div>
-        <p style={{ marginTop: '15px', color: '#666', marginBottom: '15px' }}>
-          In a real implementation, your wallet (Coinbase Wallet, MetaMask, etc.) would pop up here to sign the payment authorization.
-        </p>
-        <button 
-          onClick={onPayNow}
-          className={styles.btnPayNow}
-        >
-          💳 Simulate Payment (Demo)
-        </button>
+        {!content.isConnected ? (
+          <p style={{ marginTop: '15px', color: '#ff6b6b', fontWeight: 'bold' }}>
+            ⚠️ Please connect your wallet above to pay
+          </p>
+        ) : (
+          <>
+            <p style={{ marginTop: '15px', color: '#666', marginBottom: '15px' }}>
+              Send {content.payment.breakdown.total} ETH to your CDP wallet.
+              Funds will be held in your secure wallet linked to your phone number.
+            </p>
+            <button 
+              onClick={onPayNow}
+              className={styles.btnPayNow}
+            >
+              💳 Pay {content.payment.breakdown.total} ETH
+            </button>
+          </>
+        )}
       </>
     );
   }

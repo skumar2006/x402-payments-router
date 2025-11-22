@@ -4,10 +4,11 @@ A Next.js implementation of the x402 payment protocol with a mock purchasing age
 
 ## 🎯 What This Does
 
-- **Mock Purchasing Agent**: Simulates a purchasing workflow
+- **Mock Purchasing Agent**: Simulates a purchasing workflow (plug in your real agent API)
 - **x402 Payment Flow**: Implements the complete HTTP 402 payment protocol
 - **Dynamic Pricing**: Payment = Agent Fee ($2 USDC) + Product Cost
 - **Payment Verification**: Mocks the facilitator verification/settlement flow
+- **🆕 Automatic Wallet Creation**: Creates temporary Coinbase wallets to receive each payment
 - **Modern UI**: Beautiful Next.js frontend with React components
 
 ## 🏗️ Architecture
@@ -22,8 +23,10 @@ User Request → API Route (402 Response) → User Pays → API Verifies → Age
 2. **API returns 402** with payment instructions (total = agent fee + product cost)
 3. **User clicks "Simulate Payment"** (in production, wallet would pop up)
 4. **API verifies payment** with facilitator (mocked)
-5. **Agent executes workflow** and returns proof/results
-6. **Transaction logged** for auditability
+5. **🆕 Temporary Coinbase wallet created** to receive the payment
+6. **Agent executes workflow** (calls your API or uses mock)
+7. **Results returned** with wallet information and agent response
+8. **Transaction logged** for auditability
 
 ## 💰 Pricing Structure
 
@@ -45,12 +48,17 @@ Total x402 Payment = Agent Fee + Product Cost
 
 - Node.js 18+ installed
 - npm or yarn
+- **Your purchasing agent API endpoint** (or use mock mode for testing)
 
 ### Installation
 
 ```bash
 # Install dependencies
 npm install
+
+# Configure your agent API endpoint
+cp env.example .env.local
+# Edit .env.local and set AGENT_API_ENDPOINT to your agent's URL
 ```
 
 ### Running the App
@@ -61,6 +69,21 @@ npm run dev
 
 # App will run on http://localhost:3000
 ```
+
+### 🔧 Configuration
+
+**See [CONFIGURATION.md](./CONFIGURATION.md) for detailed setup instructions.**
+
+The payment system needs just **one input**: your agent API endpoint. Configure it in `.env.local`:
+
+```bash
+AGENT_API_ENDPOINT=http://your-agent-api.com/execute
+```
+
+That's it! The system will:
+- Handle all x402 payment logic
+- Call your agent API after payment verification
+- Display results to the user
 
 ### Build for Production
 
@@ -147,6 +170,11 @@ Response: 200 OK
   "amount": "17.99",
   "agentFee": "2.00",
   "productPrice": "15.99",
+  "wallet": {
+    "address": "0x1234...",
+    "network": "base-sepolia",
+    "walletId": "abc123..."
+  },
   "result": {
     "status": "completed",
     "orderId": "AMZ-123",
@@ -164,6 +192,10 @@ Health check endpoint.
 
 Get current agent fee and pricing structure.
 
+### GET `/api/wallet/balance?walletId=xxx`
+
+Get the balance of a temporary wallet created for a payment.
+
 ## 🧪 Testing the Flow
 
 1. Open http://localhost:3000 in your browser
@@ -179,17 +211,19 @@ Get current agent fee and pricing structure.
 
 ### Mocked (for demo):
 - ✅ Payment verification (would call real facilitator in production)
-- ✅ Agent execution (would be real purchasing logic)
-- ✅ Wallet signing (frontend would connect to real wallet)
+- ✅ Agent execution (uses mock unless you configure `AGENT_API_ENDPOINT`)
+- ✅ Wallet signing (frontend simulates payment - would use real wallet in production)
 
-### Real x402 Implementation:
+### Real Implementation:
 - ✅ HTTP 402 status code usage
 - ✅ Payment instruction format
 - ✅ Dynamic pricing calculation
 - ✅ Payment ID generation and tracking
+- ✅ **Coinbase wallet creation** (creates real wallets if CDP configured)
 - ✅ Proper flow: request → 402 → pay → verify → deliver
 - ✅ Next.js API routes with TypeScript
 - ✅ Modern React components
+- ✅ External agent API integration (just set `AGENT_API_ENDPOINT`)
 
 ## 🚧 Making This Production-Ready
 
@@ -266,6 +300,15 @@ const productPrice = searchResults[0].price;
 - **React** - UI components
 - **CSS Modules** - Scoped styling
 - **Next.js API Routes** - Backend endpoints
+
+## 📋 What You Need to Provide
+
+This payment system is **plug-and-play**. You only need:
+
+1. **Agent API Endpoint** - URL where your purchasing agent is running
+2. **Agent API Contract** - Your API should accept and return the expected format (see [CONFIGURATION.md](./CONFIGURATION.md))
+
+Everything else (payment handling, UI, x402 protocol) is handled for you!
 
 ## 📚 x402 Resources
 

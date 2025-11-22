@@ -16,6 +16,14 @@
   padding: 40px;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
 .title {
   color: #333;
   margin-bottom: 10px;

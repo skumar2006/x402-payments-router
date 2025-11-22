@@ -5,17 +5,17 @@ import crypto from 'crypto';
 const pendingPayments = new Map();
 const completedPayments = new Map();
 
-// Mock facilitator configuration
-const FACILITATOR_URL = 'https://facilitator.x402.org';
-const MERCHANT_WALLET = '0xYourMerchantWalletAddress';
-
-// Agent service fee (fixed)
-const AGENT_FEE = 2.00; // $2 USDC for agent work
+// Configuration from environment variables
+const AGENT_API_ENDPOINT = process.env.AGENT_API_ENDPOINT || 'http://localhost:8000/agent/execute';
+const AGENT_API_KEY = process.env.AGENT_API_KEY || '';
+const AGENT_FEE = parseFloat(process.env.AGENT_FEE_ETH || '0.001'); // Changed to ETH
+const FACILITATOR_URL = process.env.FACILITATOR_URL || 'https://facilitator.x402.org';
+const MERCHANT_WALLET = process.env.MERCHANT_WALLET_ADDRESS || '0xYourMerchantWalletAddress';
 
 interface PurchaseRequest {
   request: {
     query: string;
-    productPrice: number;
+    productPrice?: number; // Optional - will be fetched from agent if not provided
   };
   paymentProof?: {
     paymentId: string;
@@ -28,13 +28,26 @@ export async function POST(request: NextRequest) {
   const body: PurchaseRequest = await request.json();
   const { request: purchaseRequest, paymentProof } = body;
 
-  // Validate product price
-  const productPrice = purchaseRequest.productPrice;
-  if (!productPrice || productPrice <= 0) {
-    return NextResponse.json(
-      { error: 'Invalid product price' },
-      { status: 400 }
-    );
+  // Get product price from agent API if not provided
+  let productPrice = purchaseRequest.productPrice;
+  
+  if (!productPrice) {
+    // Call agent API to get the price
+    try {
+      const agentPrice = await getProductPrice(purchaseRequest.query);
+      if (!agentPrice) {
+        return NextResponse.json(
+          { error: 'Could not determine product price from agent' },
+          { status: 400 }
+        );
+      }
+      productPrice = agentPrice;
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: 'Failed to fetch product price: ' + error.message },
+        { status: 500 }
+      );
+    }
   }
 
   // Calculate total payment: agent fee + product cost
@@ -59,30 +72,31 @@ export async function POST(request: NextRequest) {
         error: 'Payment Required',
         payment: {
           id: paymentId,
-          amount: totalAmount.toFixed(2),
-          currency: 'USDC',
-          token: 'USDC',
-          network: 'base',
+          amount: totalAmount.toFixed(6),
+          currency: 'ETH',
+          token: 'ETH',
+          network: 'base-sepolia',
           recipient: MERCHANT_WALLET,
           facilitator: FACILITATOR_URL,
           description: `Agent purchase: ${purchaseRequest.query}`,
 
           // Breakdown of payment
           breakdown: {
-            productPrice: productPrice.toFixed(2),
-            agentFee: agentFee.toFixed(2),
-            total: totalAmount.toFixed(2),
+            productPrice: productPrice.toFixed(6),
+            agentFee: agentFee.toFixed(6),
+            total: totalAmount.toFixed(6),
+            walletAddress: MERCHANT_WALLET, // Where to send ETH
           },
 
           // Payment instructions
           instructions: {
-            method: 'transferWithAuthorization',
+            method: 'nativeTransfer',
             scheme: 'exact',
             verifyEndpoint: `${FACILITATOR_URL}/verify`,
             settleEndpoint: `${FACILITATOR_URL}/settle`,
           },
         },
-        message: `Please submit payment of ${totalAmount.toFixed(2)} USDC (${agentFee.toFixed(2)} agent fee + ${productPrice.toFixed(2)} product cost)`,
+        message: `Please submit payment of ${totalAmount.toFixed(6)} ETH (${agentFee.toFixed(6)} agent fee + ${productPrice.toFixed(6)} product cost)`,
       },
       { status: 402 }
     );
@@ -111,6 +125,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Payment verified! Move to completed
+  console.log('✅ Payment verified for paymentId:', paymentId);
+  
   pendingPayments.delete(paymentId);
   completedPayments.set(paymentId, {
     ...pendingPayment,
@@ -118,8 +134,8 @@ export async function POST(request: NextRequest) {
     completedAt: Date.now(),
   });
 
-  // Execute the mock agent workflow
-  const result = await executeMockAgentWorkflow(purchaseRequest);
+  // Execute the agent workflow (calls external API or falls back to mock)
+  const result = await executeAgentWorkflow(purchaseRequest);
 
   // Return successful response with agent results
   return NextResponse.json({
@@ -128,8 +144,61 @@ export async function POST(request: NextRequest) {
     amount: pendingPayment.totalAmount,
     agentFee: pendingPayment.agentFee,
     productPrice: pendingPayment.productPrice,
+    transactionHash: transactionHash,
     result,
   });
+}
+
+/**
+ * Get product price from agent API
+ * Calls the agent's /agent/execute endpoint to get pricing info
+ */
+async function getProductPrice(query: string): Promise<number | null> {
+  console.log('🔍 Fetching product price from agent for:', query);
+
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (AGENT_API_KEY) {
+      headers['Authorization'] = `Bearer ${AGENT_API_KEY}`;
+    }
+
+    const response = await fetch(AGENT_API_ENDPOINT, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        query: query,
+        metadata: {
+          timestamp: new Date().toISOString(),
+          priceOnly: true, // Flag to indicate we just want price info
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('❌ Agent API error:', response.status);
+      return null;
+    }
+
+    const result = await response.json();
+    
+    if (result.product && result.product.price) {
+      const price = typeof result.product.price === 'number' 
+        ? result.product.price 
+        : parseFloat(result.product.price);
+      
+      console.log('✅ Got product price from agent:', price);
+      return price;
+    }
+
+    console.error('❌ Agent response missing product price');
+    return null;
+  } catch (error: any) {
+    console.error('❌ Failed to fetch product price:', error.message);
+    return null;
+  }
 }
 
 /**
@@ -157,31 +226,67 @@ async function mockVerifyPayment(
 }
 
 /**
- * Mock purchasing agent - simulates workflow execution
+ * Execute agent workflow by calling external API
+ * Falls back to mock if AGENT_API_ENDPOINT is not configured or fails
  */
-async function executeMockAgentWorkflow(request: any): Promise<any> {
-  // Simulate agent processing time
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-
-  console.log('🤖 Agent executing purchase workflow');
+async function executeAgentWorkflow(request: any): Promise<any> {
+  console.log('🤖 Executing agent workflow');
   console.log('📝 Request:', request);
+  console.log('🔌 Agent API Endpoint:', AGENT_API_ENDPOINT);
 
-  // Return mock purchase result
-  return {
-    status: 'completed',
-    orderId: `AMZ-${Date.now()}`,
-    product: {
-      name: request.query,
-      price: `$${request.productPrice.toFixed(2)}`,
-      vendor: 'Amazon',
-      url: 'https://amazon.com/example-product',
-    },
-    proof: {
-      type: 'order_confirmation',
-      timestamp: new Date().toISOString(),
-      screenshot: 'base64_encoded_screenshot_placeholder',
-    },
-    message: 'Order placed successfully! Estimated delivery: 2-3 days',
-  };
+  try {
+    // Call the external agent API
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add API key if configured
+    if (AGENT_API_KEY) {
+      headers['Authorization'] = `Bearer ${AGENT_API_KEY}`;
+    }
+
+    const response = await fetch(AGENT_API_ENDPOINT, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        query: request.query,
+        productPrice: request.productPrice,
+        metadata: {
+          timestamp: new Date().toISOString(),
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('❌ Agent API error:', response.status, response.statusText);
+      throw new Error(`Agent API returned ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('✅ Agent workflow completed successfully');
+    
+    return result;
+  } catch (error: any) {
+    console.error('❌ Agent API call failed:', error.message);
+    console.log('⚠️  Falling back to mock agent response');
+
+    // Fallback to mock response if API fails
+    return {
+      status: 'completed',
+      orderId: `MOCK-${Date.now()}`,
+      product: {
+        name: request.query,
+        price: `$${request.productPrice.toFixed(2)}`,
+        vendor: 'Mock Vendor',
+        url: 'https://example.com/mock-product',
+      },
+      proof: {
+        type: 'order_confirmation',
+        timestamp: new Date().toISOString(),
+        note: 'This is a mock response. Configure AGENT_API_ENDPOINT to use real agent.',
+      },
+      message: 'Mock order placed (Agent API not configured or unavailable)',
+    };
+  }
 }
 
