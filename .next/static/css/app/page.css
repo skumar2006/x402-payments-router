@@ -1,0 +1,304 @@
+/*!***************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[7].use[3]!./app/page.module.css ***!
+  \***************************************************************************************************************************************************************************************************************************************************************/
+.page_container__jZF7q {
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.page_card__Cf__u {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  width: 100%;
+  padding: 40px;
+}
+
+.page_title__po7na {
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.page_subtitle__YBgxm {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.page_pricingInfo__SYkbE {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-left: 4px solid #667eea;
+}
+
+.page_pricingInfo__SYkbE h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.page_priceItem__r1iyJ {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.page_priceItem__r1iyJ:last-child {
+  border-bottom: none;
+}
+
+.page_priceLabel__Kq0Uq {
+  color: #555;
+  font-weight: 500;
+}
+
+.page_priceValue__YIUZs {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.page_form__NxPAx {
+  display: flex;
+  flex-direction: column;
+}
+
+.page_formGroup__SWXkg {
+  margin-bottom: 20px;
+}
+
+.page_formGroup__SWXkg label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+}
+
+.page_formGroup__SWXkg select,
+.page_formGroup__SWXkg textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: border-color 0.3s;
+  font-family: inherit;
+}
+
+.page_formGroup__SWXkg select:focus,
+.page_formGroup__SWXkg textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.page_formGroup__SWXkg textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.page_buttonGroup__FIDK8 {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.page_btnPrimary__d_sTc,
+.page_btnSecondary__s2OE4 {
+  flex: 1 1;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.page_btnPrimary__d_sTc {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.page_btnPrimary__d_sTc:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.page_btnPrimary__d_sTc:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.page_btnSecondary__s2OE4 {
+  background: #f8f9fa;
+  color: #333;
+  border: 2px solid #e0e0e0;
+}
+
+.page_btnSecondary__s2OE4:hover {
+  background: #e9ecef;
+}
+
+.page_statusPanel__50HOy {
+  margin-top: 30px;
+  padding: 20px;
+  border-radius: 10px;
+  animation: page_slideIn__PvyI_ 0.3s ease-out;
+}
+
+@keyframes page_slideIn__PvyI_ {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page_status-pending__0PqVZ {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.page_status-success__emYfW {
+  background: #d4edda;
+  border-left: 4px solid #28a745;
+}
+
+.page_status-error__lSWK5 {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+}
+
+.page_statusTitle__zKD0v {
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.page_statusContent__zu4E_ {
+  color: #555;
+  line-height: 1.6;
+}
+
+.page_paymentDetails__mNnPG {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.page_resultCard__IBHWj {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.page_resultItem__wWRXM {
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.page_resultItem__wWRXM:last-child {
+  border-bottom: none;
+}
+
+.page_resultLabel__YrWim {
+  font-weight: 600;
+  color: #333;
+}
+
+.page_resultValue__UT9pW {
+  color: #666;
+  margin-top: 4px;
+}
+
+.page_spinner__1BdMn {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(102, 126, 234, 0.3);
+  border-radius: 50%;
+  border-top-color: #667eea;
+  animation: page_spin__OXxwq 1s ease-in-out infinite;
+}
+
+@keyframes page_spin__OXxwq {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.page_tagSuccess__PszaM {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  background: #28a745;
+  color: white;
+}
+
+.page_priceInput__lAYYz {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  font-family: inherit;
+}
+
+.page_priceInput__lAYYz:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.page_helperText__SzSGn {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #667eea;
+}
+
+.page_btnPayNow__VzgDK {
+  width: 100%;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  margin-top: 10px;
+}
+
+.page_btnPayNow__VzgDK:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+}
+
+
