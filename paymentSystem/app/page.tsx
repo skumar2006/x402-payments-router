@@ -451,7 +451,7 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
         <div className={styles.resultItem}>
           <div className={styles.resultLabel}>✅ Payment Confirmed</div>
           <div className={styles.resultValue}>Payment ID: {content.paymentId}</div>
-          <div className={styles.resultValue}>Amount: {content.amount} USDC</div>
+          <div className={styles.resultValue}>Amount: {content.amount} ETH</div>
           <span className={styles.tagSuccess}>PAID</span>
         </div>
         <div className={styles.resultItem}>

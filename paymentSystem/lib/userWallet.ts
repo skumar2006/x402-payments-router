@@ -1,5 +1,5 @@
 import { Coinbase, Wallet } from '@coinbase/coinbase-sdk';
-import pool from './db';
+import { supabase } from './db';
 
 const CDP_API_KEY_NAME = process.env.CDP_API_KEY_NAME || '';
 const CDP_API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || '';
@@ -122,24 +122,25 @@ export async function getOrCreateUserWallet(phoneNumber: string): Promise<{
  * Get existing wallet for a phone number
  */
 export async function getUserWallet(phoneNumber: string): Promise<UserWallet | null> {
-  const client = await pool.connect();
-  
   try {
-    const result = await client.query(
-      'SELECT * FROM user_wallets WHERE phone_number = $1',
-      [phoneNumber]
-    );
+    const { data, error } = await supabase
+      .from('user_wallets')
+      .select('*')
+      .eq('phone_number', phoneNumber)
+      .single();
 
-    if (result.rows.length === 0) {
-      return null;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - this is fine
+        return null;
+      }
+      throw error;
     }
 
-    return result.rows[0] as UserWallet;
+    return data as UserWallet;
   } catch (error: any) {
     console.error('❌ Error fetching user wallet:', error.message);
     return null;
-  } finally {
-    client.release();
   }
 }
 
@@ -150,24 +151,23 @@ async function saveUserWallet(
   phoneNumber: string,
   walletInfo: { walletId: string; walletAddress: string; walletData: any }
 ): Promise<void> {
-  const client = await pool.connect();
-  
   try {
-    await client.query(
-      `INSERT INTO user_wallets (phone_number, wallet_id, wallet_address, wallet_data)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (phone_number) DO UPDATE SET
-         wallet_id = EXCLUDED.wallet_id,
-         wallet_address = EXCLUDED.wallet_address,
-         wallet_data = EXCLUDED.wallet_data,
-         updated_at = NOW()`,
-      [phoneNumber, walletInfo.walletId, walletInfo.walletAddress, JSON.stringify(walletInfo.walletData)]
-    );
+    const { error } = await supabase
+      .from('user_wallets')
+      .upsert({
+        phone_number: phoneNumber,
+        wallet_id: walletInfo.walletId,
+        wallet_address: walletInfo.walletAddress,
+        wallet_data: walletInfo.walletData,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'phone_number'
+      });
+
+    if (error) throw error;
   } catch (error: any) {
     console.error('❌ Error saving user wallet:', error.message);
     throw error;
-  } finally {
-    client.release();
   }
 }
 
@@ -175,24 +175,25 @@ async function saveUserWallet(
  * Get wallet by address
  */
 export async function getWalletByAddress(address: string): Promise<UserWallet | null> {
-  const client = await pool.connect();
-  
   try {
-    const result = await client.query(
-      'SELECT * FROM user_wallets WHERE wallet_address = $1',
-      [address]
-    );
+    const { data, error } = await supabase
+      .from('user_wallets')
+      .select('*')
+      .eq('wallet_address', address)
+      .single();
 
-    if (result.rows.length === 0) {
-      return null;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned - this is fine
+        return null;
+      }
+      throw error;
     }
 
-    return result.rows[0] as UserWallet;
+    return data as UserWallet;
   } catch (error: any) {
     console.error('❌ Error fetching wallet by address:', error.message);
     return null;
-  } finally {
-    client.release();
   }
 }
 
@@ -200,19 +201,18 @@ export async function getWalletByAddress(address: string): Promise<UserWallet | 
  * Get all wallets (for admin purposes)
  */
 export async function getAllWallets(): Promise<UserWallet[]> {
-  const client = await pool.connect();
-  
   try {
-    const result = await client.query(
-      'SELECT * FROM user_wallets ORDER BY created_at DESC'
-    );
+    const { data, error } = await supabase
+      .from('user_wallets')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    return result.rows as UserWallet[];
+    if (error) throw error;
+
+    return (data as UserWallet[]) || [];
   } catch (error: any) {
     console.error('❌ Error fetching all wallets:', error.message);
     return [];
-  } finally {
-    client.release();
   }
 }
 

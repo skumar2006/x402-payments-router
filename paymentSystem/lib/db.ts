@@ -1,22 +1,17 @@
-import { Pool } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 
-// PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
-});
+// Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Test connection on startup
-pool.on('connect', () => {
-  console.log('✅ Connected to PostgreSQL database');
-});
+if (!supabaseUrl || !supabaseKey) {
+  console.warn('⚠️  Supabase credentials not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local');
+}
 
-pool.on('error', (err) => {
-  console.error('❌ Unexpected database error:', err);
-});
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default pool;
+// Test connection
+if (supabaseUrl && supabaseKey) {
+  console.log('✅ Supabase client initialized');
+}
 
