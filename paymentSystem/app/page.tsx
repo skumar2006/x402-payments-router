@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Button } from '@coinbase/cds-web/buttons/Button';
 import { parseEther } from 'viem';
 import styles from './page.module.css';
 
@@ -296,13 +297,13 @@ export default function Home() {
               </p>
             </div>
 
-            <button
+            <Button
               type="submit"
-              className={styles.btnPrimary}
+              variant="primary"
               disabled={isSettingUp}
             >
               {isSettingUp ? 'Creating Wallet...' : 'Continue'}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -357,20 +358,25 @@ export default function Home() {
           </div>
 
           <div className={styles.buttonGroup}>
-            <button type="submit" className={styles.btnPrimary}>
-              Request Agent Service
-            </button>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={() => {
-                resetForm();
-                setUserWallet(null);
-                setPhoneNumber('');
-              }}
-            >
-              Change Phone Number
-            </button>
+            <div style={{ flex: 1 }}>
+              <Button type="submit" variant="primary" block>
+                Request Agent Service
+              </Button>
+            </div>
+            <div style={{ flex: 1 }}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  resetForm();
+                  setUserWallet(null);
+                  setPhoneNumber('');
+                }}
+                block
+              >
+                Change Phone Number
+              </Button>
+            </div>
           </div>
         </form>
 
@@ -433,12 +439,15 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
               Send {content.payment.breakdown.total} ETH to your CDP wallet.
               Funds will be held in your secure wallet linked to your phone number.
             </p>
-            <button 
+            <Button 
               onClick={onPayNow}
-              className={styles.btnPayNow}
+              variant="primary"
+              startIcon="wallet"
+              block
+              style={{ marginTop: '10px' }}
             >
-              💳 Pay {content.payment.breakdown.total} ETH
-            </button>
+              Pay {content.payment.breakdown.total} ETH
+            </Button>
           </>
         )}
       </>
