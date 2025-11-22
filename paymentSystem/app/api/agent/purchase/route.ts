@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { createWalletClient, createPublicClient, http } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { baseSepolia } from 'viem/chains';
+import { escrowABI } from '@/lib/escrowABI';
+import { generateOrderId, getEscrowContractAddress } from '@/lib/escrowUtils';
 
 // In-memory storage for payment verifications
 const pendingPayments = new Map();
@@ -36,10 +41,10 @@ export async function POST(request: NextRequest) {
     try {
       const agentPrice = await getProductPrice(purchaseRequest.query);
       if (!agentPrice) {
-        return NextResponse.json(
+    return NextResponse.json(
           { error: 'Could not determine product price from agent' },
-          { status: 400 }
-        );
+      { status: 400 }
+    );
       }
       productPrice = agentPrice;
     } catch (error: any) {
@@ -137,6 +142,18 @@ export async function POST(request: NextRequest) {
   // Execute the agent workflow (calls external API or falls back to mock)
   const result = await executeAgentWorkflow(purchaseRequest);
 
+  // If agent completed successfully, confirm payment on-chain
+  let escrowConfirmation = null;
+  if (result.status === 'completed') {
+    try {
+      escrowConfirmation = await confirmPaymentOnChain(paymentId);
+      console.log('✅ Payment confirmed on-chain:', escrowConfirmation);
+    } catch (error: any) {
+      console.error('❌ Failed to confirm on-chain:', error.message);
+      console.warn('⚠️  Payment will auto-refund after 15 minutes if not confirmed');
+    }
+  }
+
   // Return successful response with agent results
   return NextResponse.json({
     success: true,
@@ -145,8 +162,67 @@ export async function POST(request: NextRequest) {
     agentFee: pendingPayment.agentFee,
     productPrice: pendingPayment.productPrice,
     transactionHash: transactionHash,
+    escrowConfirmation,
     result,
   });
+}
+
+/**
+ * Confirm payment on escrow smart contract
+ * Releases funds from escrow to merchant wallet
+ */
+async function confirmPaymentOnChain(paymentId: string): Promise<any> {
+  const backendPrivateKey = process.env.BACKEND_PRIVATE_KEY;
+  
+  if (!backendPrivateKey) {
+    throw new Error('BACKEND_PRIVATE_KEY not configured');
+  }
+
+  console.log('📤 Confirming payment on-chain...');
+  console.log('   Payment ID:', paymentId);
+
+  const orderId = generateOrderId(paymentId);
+  const escrowAddress = getEscrowContractAddress();
+
+  console.log('   Order ID:', orderId);
+  console.log('   Escrow Contract:', escrowAddress);
+
+  const account = privateKeyToAccount(`0x${backendPrivateKey}` as `0x${string}`);
+  
+  const walletClient = createWalletClient({
+    account,
+    chain: baseSepolia,
+    transport: http(),
+  });
+
+  const publicClient = createPublicClient({
+    chain: baseSepolia,
+    transport: http(),
+  });
+
+  const hash = await walletClient.writeContract({
+    address: escrowAddress,
+    abi: escrowABI,
+    functionName: 'confirmPayment',
+    args: [orderId],
+  });
+
+  console.log('   Transaction sent:', hash);
+  console.log('   Waiting for confirmation...');
+
+  const receipt = await publicClient.waitForTransactionReceipt({
+    hash,
+    confirmations: 1,
+  });
+
+  console.log('✅ Funds released to merchant!');
+  console.log('   Block:', receipt.blockNumber);
+
+  return {
+    transactionHash: receipt.transactionHash,
+    blockNumber: receipt.blockNumber.toString(),
+    status: 'confirmed',
+  };
 }
 
 /**

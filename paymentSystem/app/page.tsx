@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther } from 'viem';
 import styles from './page.module.css';
+import { escrowABI } from '@/lib/escrowABI';
+import { generateOrderId, getEscrowContractAddress } from '@/lib/escrowUtils';
 
 interface PaymentResponse {
   error: string;
@@ -47,7 +49,7 @@ export default function Home() {
 
   // Wallet hooks
   const { address, isConnected } = useAccount();
-  const { sendTransaction, data: hash, isPending: isWritePending, error: writeError } = useSendTransaction();
+  const { writeContract, data: hash, isPending: isWritePending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
@@ -174,17 +176,30 @@ export default function Home() {
       return;
     }
 
+    if (!currentPaymentId) {
+      showError('No payment ID available');
+      return;
+    }
+
     setStatus('pending');
     setStatusTitle('💳 Waiting for Wallet Approval...');
     setStatusContent({ processing: true, message: 'Please approve the transaction in your wallet' });
 
     try {
-      // Convert amount to Wei (18 decimals for ETH)
       const amountInWei = parseEther(amount);
+      const orderId = generateOrderId(currentPaymentId);
+      const escrowAddress = getEscrowContractAddress();
 
-      // Send ETH transfer to user's CDP wallet
-      sendTransaction({
-        to: userWallet.address as `0x${string}`,
+      console.log('📤 Creating escrow payment...');
+      console.log('   Order ID:', orderId);
+      console.log('   Amount:', amount, 'ETH');
+      console.log('   Escrow Contract:', escrowAddress);
+
+      writeContract({
+        address: escrowAddress,
+        abi: escrowABI,
+        functionName: 'createPayment',
+        args: [orderId],
         value: amountInWei,
       });
     } catch (error: any) {
@@ -314,13 +329,13 @@ export default function Home() {
       <div className={styles.card}>
         <div className={styles.header}>
           <div>
-            <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
-            <p className={styles.subtitle}>
+        <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
+        <p className={styles.subtitle}>
               Real USDC payments on Base Sepolia
             </p>
             <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
               📱 Wallet: {userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}
-            </p>
+        </p>
           </div>
           <ConnectButton />
         </div>
@@ -429,16 +444,16 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
           </p>
         ) : (
           <>
-            <p style={{ marginTop: '15px', color: '#666', marginBottom: '15px' }}>
+        <p style={{ marginTop: '15px', color: '#666', marginBottom: '15px' }}>
               Send {content.payment.breakdown.total} ETH to your CDP wallet.
               Funds will be held in your secure wallet linked to your phone number.
-            </p>
-            <button 
-              onClick={onPayNow}
-              className={styles.btnPayNow}
-            >
+        </p>
+        <button 
+          onClick={onPayNow}
+          className={styles.btnPayNow}
+        >
               💳 Pay {content.payment.breakdown.total} ETH
-            </button>
+        </button>
           </>
         )}
       </>
