@@ -81,10 +81,15 @@ export default function IntegrationsPage() {
             </button>
           </Link>
           <h1 className="text-xl font-normal tracking-tight font-averia">Integrations</h1>
-          <Button className=" absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black hover:bg-black/90 text-white pr-4 pl-2.5 h-10 text-sm shrink-0 active:scale-[0.98]">
-            <Plus className="w-4 h-4 mr-0.3" />
+          <button
+            type="button"
+            className="absolute right-4 top-1/2 -translate-y-1/2 overflow-hidden cursor-pointer transition-[box-shadow,background-color,transform] duration-[125ms] ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-white focus-visible:ring-offset-2 disabled:cursor-not-allowed shadow-[inset_0_0_0_1px_rgba(0,0,0,0.75),0px_2px_5.6px_0px_rgba(0,0,0,0.08),inset_0px_0px_3px_0px_rgba(255,255,255,0.75)] [background:linear-gradient(180deg,rgba(255,255,255,0.15)_0%,rgba(255,255,255,0.00)_38.33%),linear-gradient(180deg,rgba(0,0,0,0.00)_52.94%,rgba(0,0,0,0.75)_100%),#1B1B1B] hover:[background:linear-gradient(180deg,rgba(255,255,255,0.25)_0%,rgba(255,255,255,0.10)_38.33%),linear-gradient(180deg,rgba(0,0,0,0.00)_52.94%,rgba(0,0,0,0.75)_100%),#1B1B1B] flex flex-row items-center gap-2 rounded-full px-3 py-1 text-sm font-medium text-white"
+          >
+            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-3 w-3">
+              <path d="M12 4V12M12 12V20M12 12H4M12 12H20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"></path>
+            </svg>
             Add
-          </Button>
+          </button>
         </div>
 
         {/* Content Container */}
