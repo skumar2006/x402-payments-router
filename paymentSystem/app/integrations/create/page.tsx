@@ -9,6 +9,21 @@ import { ProgressiveBlur } from "@/components/core/progressive-blur";
 
 export default function CreateIntegrationPage() {
   const [inputValue, setInputValue] = useState("");
+  const [pendingLink, setPendingLink] = useState<string | null>(null);
+
+  const cleanUrl = (url: string) => {
+    return url
+      .replace(/^https?:\/\//, '') // Remove http:// or https://
+      .replace(/^www\./, '') // Remove www.
+      .replace(/\/$/, ''); // Remove trailing slash
+  };
+
+  const handleSubmit = () => {
+    if (inputValue.trim()) {
+      setPendingLink(inputValue.trim());
+      setInputValue("");
+    }
+  };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center py-20" style={{ backgroundImage: 'url(/bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -62,6 +77,11 @@ export default function CreateIntegrationPage() {
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && inputValue.trim()) {
+                    handleSubmit();
+                  }
+                }}
                 placeholder="Paste the site you want Flip to interact with..."
                 className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pl-4 pr-12 text-sm placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus-visible:outline-none"
               />
@@ -72,7 +92,8 @@ export default function CreateIntegrationPage() {
                     animate={{ opacity: 1, scale: 1, x: 0 }}
                     exit={{ opacity: 0, scale: 0.8, x: 10 }}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                    className="absolute right-2 p-2 bg-black text-white rounded-full hover:bg-black/90 transition-colors active:scale-95"
+                    onClick={handleSubmit}
+                    className="absolute right-2 p-2 bg-black text-white rounded-full hover:bg-black/90 transition-colors active:scale-[0.98]"
                   >
                     <Send className="h-4 w-4" />
                   </motion.button>
@@ -80,9 +101,41 @@ export default function CreateIntegrationPage() {
               </AnimatePresence>
             </div>
 
-            {/* Chat Messages Area (Empty for now) */}
+            {/* Chat Messages Area */}
             <div className="flex flex-col gap-4">
-              {/* Messages would go here */}
+              {pendingLink && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                  className="flex flex-col gap-2"
+                >
+                  <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                    <p className="text-sm text-gray-700">
+                      Just to confirm, you want me to build an integration for{" "}
+                      <span className="font-medium text-gray-900">{cleanUrl(pendingLink)}</span>?
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 justify-end">
+                    <button
+                      onClick={() => setPendingLink(null)}
+                      className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors active:scale-[0.98]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => {
+                        // TODO: Implement the actual integration creation logic
+                        console.log("Creating integration for:", pendingLink);
+                        setPendingLink(null);
+                      }}
+                      className="overflow-hidden cursor-pointer transition-[box-shadow,background-color,transform] duration-[125ms] ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-white focus-visible:ring-offset-2 disabled:cursor-not-allowed shadow-[inset_0_0_0_1px_rgba(0,0,0,0.75),0px_2px_5.6px_0px_rgba(0,0,0,0.08),inset_0px_0px_3px_0px_rgba(255,255,255,0.75)] [background:linear-gradient(180deg,rgba(255,255,255,0.15)_0%,rgba(255,255,255,0.00)_38.33%),linear-gradient(180deg,rgba(0,0,0,0.00)_52.94%,rgba(0,0,0,0.75)_100%),#1B1B1B] hover:[background:linear-gradient(180deg,rgba(255,255,255,0.25)_0%,rgba(255,255,255,0.10)_38.33%),linear-gradient(180deg,rgba(0,0,0,0.00)_52.94%,rgba(0,0,0,0.75)_100%),#1B1B1B] rounded-full px-4 py-2 text-sm font-medium leading-none text-white"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
