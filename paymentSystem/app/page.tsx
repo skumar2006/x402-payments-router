@@ -4,9 +4,16 @@ import React, { useState } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther } from 'viem';
-import styles from './page.module.css';
 import { escrowABI } from '@/lib/escrowABI';
 import { generateOrderId, getEscrowContractAddress } from '@/lib/escrowUtils';
+
+import { Button } from '@coinbase/cds-web/buttons';
+import { TextInput } from '@coinbase/cds-web/controls';
+import { Text } from '@coinbase/cds-web/typography';
+import { ContentCard, ContentCardBody } from '@coinbase/cds-web/cards';
+import { Box, VStack, HStack, Divider } from '@coinbase/cds-web/layout';
+import { Spinner } from '@coinbase/cds-web/loaders';
+import { Banner } from '@coinbase/cds-web/banner/Banner';
 
 interface PaymentResponse {
   error: string;
@@ -286,123 +293,167 @@ export default function Home() {
   // Show phone number input first if user hasn't set up wallet
   if (!userWallet) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
-          <p className={styles.subtitle}>
-            Enter your phone number to get started
-          </p>
+      <Box 
+        minHeight="100vh" 
+        padding={4} 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        backgroundColor="bg"
+      >
+        <Box maxWidth="800px" width="100%">
+          <ContentCard>
+            <ContentCardBody>
+              <VStack gap={4}>
+                <Box>
+                  <Text font="display1" as="h1" color="fgPrimary">
+                    🤖 x402 Purchasing Agent
+                  </Text>
+                  <Text font="body" color="fgMuted">
+                    Enter your phone number to get started
+                  </Text>
+                </Box>
 
-          <form onSubmit={handlePhoneSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="phoneNumber">Phone Number</label>
-              <input
-                type="tel"
-                id="phoneNumber"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+1234567890"
-                required
-                className={styles.priceInput}
-              />
-              <p className={styles.helperText}>
-                💡 We'll create a secure wallet for you using Coinbase CDP.
-                Your wallet will be linked to this phone number.
-              </p>
-            </div>
+                <form onSubmit={handlePhoneSubmit}>
+                  <VStack gap={4}>
+                    <TextInput
+                      label="Phone Number"
+                      placeholder="+1234567890"
+                      value={phoneNumber}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
+                      helperText="💡 We'll create a secure wallet for you using Coinbase CDP. Your wallet will be linked to this phone number."
+                    />
 
-            <button
-              type="submit"
-              className={styles.btnPrimary}
-              disabled={isSettingUp}
-            >
-              {isSettingUp ? 'Creating Wallet...' : 'Continue'}
-            </button>
-          </form>
-        </div>
-      </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={isSettingUp}
+                    >
+                      {isSettingUp ? 'Creating Wallet...' : 'Continue'}
+                    </Button>
+                  </VStack>
+                </form>
+              </VStack>
+            </ContentCardBody>
+          </ContentCard>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <div>
-        <h1 className={styles.title}>🤖 x402 Purchasing Agent</h1>
-        <p className={styles.subtitle}>
-              Real USDC payments on Base Sepolia
-            </p>
-            <p style={{ fontSize: '14px', color: '#666', marginTop: '5px' }}>
-              📱 Wallet: {userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}
-        </p>
-          </div>
-          <ConnectButton />
-        </div>
+    <Box 
+      minHeight="100vh" 
+      padding={4} 
+      display="flex" 
+      justifyContent="center" 
+      alignItems="center" 
+      backgroundColor="bg"
+    >
+      <Box maxWidth="800px" width="100%">
+        <ContentCard>
+          <ContentCardBody>
+            <VStack gap={6}>
+              {/* Header */}
+              <HStack justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={4}>
+                <VStack>
+                  <Text font="display1" as="h1" color="fgPrimary">
+                    🤖 x402 Purchasing Agent
+                  </Text>
+                  <Text font="body" color="fgMuted">
+                    Real USDC payments on Base Sepolia
+                  </Text>
+                  <Text font="caption" color="fgMuted" marginTop={1}>
+                    📱 Wallet: {userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}
+                  </Text>
+                </VStack>
+                <ConnectButton />
+              </HStack>
 
-        <div className={styles.pricingInfo}>
-          <h3>💰 Payment Structure</h3>
-          <div className={styles.priceItem}>
-            <span className={styles.priceLabel}>Agent Service Fee (fixed)</span>
-            <span className={styles.priceValue}>{AGENT_FEE.toFixed(2)} USDC</span>
-          </div>
-          <div className={styles.priceItem}>
-            <span className={styles.priceLabel}>Product Cost</span>
-            <span className={styles.priceValue}>Your input below</span>
-          </div>
-          <div className={styles.priceItem} style={{ borderTop: '2px solid #667eea', paddingTop: '12px', marginTop: '8px' }}>
-            <span className={styles.priceLabel}><strong>Total x402 Payment</strong></span>
-            <span className={styles.priceValue}><strong>Agent Fee + Product Cost</strong></span>
-          </div>
-        </div>
+              {/* Pricing Info */}
+              <Box 
+                backgroundColor="bgElevation1" 
+                padding={4} 
+                borderRadius="400"
+                borderLeftWidth="300"
+                borderColor="bgPrimary"
+              >
+                <VStack gap={3}>
+                  <Text font="title3" as="h3">💰 Payment Structure</Text>
+                  
+                  <HStack justifyContent="space-between">
+                    <Text color="fgMuted">Agent Service Fee (fixed)</Text>
+                    <Text font="headline" color="fgPrimary">{AGENT_FEE.toFixed(2)} USDC</Text>
+                  </HStack>
+                  
+                  <HStack justifyContent="space-between">
+                    <Text color="fgMuted">Product Cost</Text>
+                    <Text font="headline" color="fgPrimary">Your input below</Text>
+                  </HStack>
+                  
+                  <Divider />
+                  
+                  <HStack justifyContent="space-between">
+                    <Text font="headline" fontWeight="bold">Total x402 Payment</Text>
+                    <Text font="headline" fontWeight="bold">Agent Fee + Product Cost</Text>
+                  </HStack>
+                </VStack>
+              </Box>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label htmlFor="query">What would you like to buy?</label>
-            <textarea
-              id="query"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g., USB-C charger, headphones, laptop..."
-              required
-            />
-            <p className={styles.helperText}>
-              💡 The agent will automatically look up the price for you!
-            </p>
-          </div>
+              {/* Form */}
+              <form onSubmit={handleSubmit}>
+                <VStack gap={4}>
+                  <TextInput
+                    label="What would you like to buy?"
+                    placeholder="e.g., USB-C charger, headphones, laptop..."
+                    value={query}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+                    helperText="💡 The agent will automatically look up the price for you!"
+                  />
 
-          <div className={styles.buttonGroup}>
-            <button type="submit" className={styles.btnPrimary}>
-              Request Agent Service
-            </button>
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={() => {
-                resetForm();
-                setUserWallet(null);
-                setPhoneNumber('');
-              }}
-            >
-              Change Phone Number
-            </button>
-          </div>
-        </form>
+                  <HStack gap={3}>
+                    <Button type="submit" variant="primary" flexGrow={1}>
+                      Request Agent Service
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      flexGrow={1}
+                      onClick={() => {
+                        resetForm();
+                        setUserWallet(null);
+                        setPhoneNumber('');
+                      }}
+                    >
+                      Change Phone Number
+                    </Button>
+                  </HStack>
+                </VStack>
+              </form>
 
-        {status !== 'idle' && (
-          <div className={`${styles.statusPanel} ${styles[`status-${status}`]}`}>
-            <div className={styles.statusTitle}>{statusTitle}</div>
-            <div className={styles.statusContent}>
-              <StatusContent 
-                status={status} 
-                content={statusContent}
-                onPayNow={handleManualPayment}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+              {/* Status Panel */}
+              {status !== 'idle' && (
+                <Banner
+                  variant={status === 'error' ? 'error' : status === 'success' ? 'informational' : 'warning'}
+                  title={statusTitle}
+                  startIcon={status === 'pending' ? 'info' : status === 'success' ? 'checkmark' : 'error'}
+                  startIconActive
+                  styleVariant="inline"
+                >
+                   <Box marginTop={2}>
+                    <StatusContent 
+                      status={status} 
+                      content={statusContent}
+                      onPayNow={handleManualPayment}
+                    />
+                   </Box>
+                </Banner>
+              )}
+            </VStack>
+          </ContentCardBody>
+        </ContentCard>
+      </Box>
+    </Box>
   );
 }
 
@@ -410,76 +461,91 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
   if (!content) return null;
 
   if (content.loading) {
-    return <div className={styles.spinner}></div>;
+    return (
+      <HStack justifyContent="center" padding={4}>
+        <Spinner size={2} />
+      </HStack>
+    );
   }
 
   if (content.processing) {
     return (
-      <>
-        <div className={styles.spinner}></div>
-        <p>{content.message || 'Processing...'}</p>
-      </>
+      <VStack alignItems="center" gap={2}>
+        <Spinner size={2} />
+        <Text>{content.message || 'Processing...'}</Text>
+      </VStack>
     );
   }
 
   if (content.payment && content.waitingForPayment) {
     return (
-      <>
-        <div className={styles.paymentDetails}>
-          <strong>Payment ID:</strong> {content.payment.id}
-          <br />
-          <strong>Product Price:</strong> {content.payment.breakdown.productPrice} ETH
-          <br />
-          <strong>Agent Fee:</strong> {content.payment.breakdown.agentFee} ETH
-          <br />
-          <strong>Total Amount:</strong> <span style={{ color: '#667eea', fontSize: '18px', fontWeight: 'bold' }}>{content.payment.breakdown.total} ETH</span>
-          <br />
-          <strong>Network:</strong> Base Sepolia
-          <br />
-          <strong>Your Wallet:</strong> {content.userWalletAddress ? `${content.userWalletAddress.slice(0, 6)}...${content.userWalletAddress.slice(-4)}` : 'N/A'}
-        </div>
+      <VStack gap={4}>
+        <Box 
+          backgroundColor="bg" 
+          padding={3} 
+          borderRadius="200" 
+          borderWidth="100" 
+          borderColor="bgLine"
+        >
+          <VStack gap={1}>
+            <Text><strong>Payment ID:</strong> {content.payment.id}</Text>
+            <Text><strong>Product Price:</strong> {content.payment.breakdown.productPrice} ETH</Text>
+            <Text><strong>Agent Fee:</strong> {content.payment.breakdown.agentFee} ETH</Text>
+            <Text><strong>Total Amount:</strong> <Text as="span" color="fgPrimary" font="headline">{content.payment.breakdown.total} ETH</Text></Text>
+            <Text><strong>Network:</strong> Base Sepolia</Text>
+            <Text><strong>Your Wallet:</strong> {content.userWalletAddress ? `${content.userWalletAddress.slice(0, 6)}...${content.userWalletAddress.slice(-4)}` : 'N/A'}</Text>
+          </VStack>
+        </Box>
+
         {!content.isConnected ? (
-          <p style={{ marginTop: '15px', color: '#ff6b6b', fontWeight: 'bold' }}>
+          <Text color="fgNegative" fontWeight="bold">
             ⚠️ Please connect your wallet above to pay
-          </p>
+          </Text>
         ) : (
-          <>
-        <p style={{ marginTop: '15px', color: '#666', marginBottom: '15px' }}>
+          <VStack gap={3}>
+            <Text color="fgMuted">
               Send {content.payment.breakdown.total} ETH to your CDP wallet.
               Funds will be held in your secure wallet linked to your phone number.
-        </p>
-        <button 
-          onClick={onPayNow}
-          className={styles.btnPayNow}
-        >
+            </Text>
+            <Button 
+              onClick={onPayNow}
+              variant="primary"
+            >
               💳 Pay {content.payment.breakdown.total} ETH
-        </button>
-          </>
+            </Button>
+          </VStack>
         )}
-      </>
+      </VStack>
     );
   }
 
   if (content.success) {
     return (
-      <div className={styles.resultCard}>
-        <div className={styles.resultItem}>
-          <div className={styles.resultLabel}>✅ Payment Confirmed</div>
-          <div className={styles.resultValue}>Payment ID: {content.paymentId}</div>
-          <div className={styles.resultValue}>Amount: {content.amount} ETH</div>
-          <span className={styles.tagSuccess}>PAID</span>
-        </div>
-        <div className={styles.resultItem}>
-          <div className={styles.resultLabel}>🤖 Agent Result</div>
-          <div className={styles.resultValue}>Status: {content.result.status}</div>
-          <ResultDetails result={content.result} />
-        </div>
-      </div>
+      <VStack gap={4}>
+        <Box backgroundColor="bg" padding={3} borderRadius="200">
+          <VStack gap={2}>
+            <Text font="headline" color="fgPrimary">✅ Payment Confirmed</Text>
+            <Text>Payment ID: {content.paymentId}</Text>
+            <Text>Amount: {content.amount} ETH</Text>
+            <Box>
+              <Text backgroundColor="bgPositive" color="fgInverse" paddingX={2} paddingY={1} borderRadius="100" as="span">PAID</Text>
+            </Box>
+          </VStack>
+        </Box>
+        
+        <Box backgroundColor="bg" padding={3} borderRadius="200">
+          <VStack gap={2}>
+            <Text font="headline" color="fgPrimary">🤖 Agent Result</Text>
+            <Text>Status: {content.result.status}</Text>
+            <ResultDetails result={content.result} />
+          </VStack>
+        </Box>
+      </VStack>
     );
   }
 
   if (content.error) {
-    return <p>{content.error}</p>;
+    return <Text color="fgNegative">{content.error}</Text>;
   }
 
   return <pre>{JSON.stringify(content, null, 2)}</pre>;
@@ -488,43 +554,42 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
 function ResultDetails({ result }: { result: any }) {
   if (result.orderId) {
     return (
-      <>
-        <div className={styles.resultValue}>Order ID: {result.orderId}</div>
-        <div className={styles.resultValue}>Product: {result.product.name}</div>
-        <div className={styles.resultValue}>Price: {result.product.price}</div>
-        <div className={styles.resultValue}>Message: {result.message}</div>
-      </>
+      <VStack gap={1}>
+        <Text>Order ID: {result.orderId}</Text>
+        <Text>Product: {result.product.name}</Text>
+        <Text>Price: {result.product.price}</Text>
+        <Text>Message: {result.message}</Text>
+      </VStack>
     );
   }
 
   if (result.results) {
     return (
-      <>
-        <div className={styles.resultValue}>Found {result.resultsCount} products:</div>
+      <VStack gap={1}>
+        <Text>Found {result.resultsCount} products:</Text>
         {result.results.map((r: any, i: number) => (
-          <div key={i} className={styles.resultValue}>
+          <Text key={i}>
             • {r.name} - {r.price} (⭐ {r.rating})
-          </div>
+          </Text>
         ))}
-      </>
+      </VStack>
     );
   }
 
   if (result.comparison) {
     return (
-      <>
-        <div className={styles.resultValue}>
+      <VStack gap={1}>
+        <Text>
           Recommendation: {result.recommendation}
-        </div>
+        </Text>
         {result.comparison.map((c: any, i: number) => (
-          <div key={i} className={styles.resultValue}>
+          <Text key={i}>
             • {c.vendor}: {c.price} + {c.shipping} shipping
-          </div>
+          </Text>
         ))}
-      </>
+      </VStack>
     );
   }
 
   return null;
 }
-

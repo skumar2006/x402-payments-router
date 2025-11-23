@@ -6,7 +6,13 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther, formatEther, keccak256, toHex } from 'viem';
 import { escrowABI } from '@/lib/escrowABI';
 import { getEscrowContractAddress } from '@/lib/escrowUtils';
-import styles from '../page.module.css';
+import { Button } from '@coinbase/cds-web/buttons';
+import { TextInput } from '@coinbase/cds-web/controls';
+import { Text } from '@coinbase/cds-web/typography';
+import { ContentCard, ContentCardBody } from '@coinbase/cds-web/cards';
+import { Box, VStack, HStack, Divider } from '@coinbase/cds-web/layout';
+import { Banner } from '@coinbase/cds-web/banner/Banner';
+import { Link } from '@coinbase/cds-web/navigation';
 
 export default function TestEscrow() {
   const { address, isConnected } = useAccount();
@@ -157,185 +163,223 @@ export default function TestEscrow() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div style={{ marginBottom: '1rem' }}>
-          <a 
-            href="/"
-            style={{ 
-              color: '#667eea', 
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: 500
-            }}
-          >
-            ← Back to Main App
-          </a>
-        </div>
-        <h1 className={styles.title}>🧪 Escrow Contract Testing</h1>
-        <p className={styles.subtitle}>
-          Test the X402 escrow contract functions
-        </p>
-
-        {/* Wallet Connection */}
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
-          <ConnectButton />
-        </div>
-
-        {!isConnected ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>
-            👆 Connect your wallet to test the escrow contract
-          </p>
-        ) : (
-          <>
-            {/* Contract Info */}
-            <div className={styles.resultCard} style={{ marginBottom: '2rem' }}>
-              <h3>📄 Contract Info</h3>
-              <div style={{ fontSize: '14px', marginTop: '1rem' }}>
-                <div><strong>Contract:</strong> {escrowAddress}</div>
-                <div><strong>Merchant:</strong> {merchantWallet as string}</div>
-                <div><strong>Timeout:</strong> {timeout ? `${timeout.toString()} seconds (15 min)` : 'Loading...'}</div>
-                <div><strong>Your Address:</strong> {address}</div>
-              </div>
-            </div>
-
-            {/* Order ID Input */}
-            <div className={styles.formGroup}>
-              <label>Order ID (for testing)</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="text"
-                  value={orderId}
-                  onChange={(e) => setOrderId(e.target.value)}
-                  placeholder="e.g., test-123 or payment-abc"
-                  className={styles.priceInput}
-                  style={{ flex: 1 }}
-                />
-                <button
-                  onClick={generateRandomOrderId}
-                  className={styles.btnPrimary}
-                  style={{ width: 'auto', padding: '0 1rem' }}
-                >
-                  🎲 Random
-                </button>
-              </div>
-              <p className={styles.helperText}>
-                💡 Use a unique ID for each test payment
-              </p>
-            </div>
-
-            {/* Create Payment */}
-            <div className={styles.formGroup}>
-              <label>Amount (ETH)</label>
-              <input
-                type="text"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.01"
-                className={styles.priceInput}
-              />
-              <button
-                onClick={handleCreatePayment}
-                disabled={isCreating || isCreateLoading || !orderId}
-                className={styles.btnPrimary}
-                style={{ marginTop: '0.5rem' }}
-              >
-                {isCreating || isCreateLoading ? '⏳ Creating Payment...' : '💰 Create Payment (Lock ETH)'}
-              </button>
-              <p className={styles.helperText}>
-                This locks your ETH in the escrow contract
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '2rem' }}>
-              <button
-                onClick={handleConfirmPayment}
-                disabled={isConfirming || isConfirmLoading || !orderId}
-                className={styles.btnPrimary}
-                style={{ background: '#10b981' }}
-              >
-                {isConfirming || isConfirmLoading ? '⏳ Confirming...' : '✅ Confirm Payment'}
-              </button>
+    <Box 
+      minHeight="100vh" 
+      padding={4} 
+      display="flex" 
+      justifyContent="center" 
+      alignItems="center" 
+      backgroundColor="bg"
+    >
+      <Box maxWidth="800px" width="100%">
+        <ContentCard>
+          <ContentCardBody>
+            <VStack gap={6}>
+              <Box>
+                <Link href="/" color="primary">
+                  ← Back to Main App
+                </Link>
+              </Box>
               
-              <button
-                onClick={handleRefundPayment}
-                disabled={isRefunding || isRefundLoading || !orderId}
-                className={styles.btnPrimary}
-                style={{ background: '#f59e0b' }}
-              >
-                {isRefunding || isRefundLoading ? '⏳ Refunding...' : '↩️ Refund (After Timeout)'}
-              </button>
-            </div>
+              <Box>
+                <Text font="display1" as="h1" color="fgPrimary">
+                  🧪 Escrow Contract Testing
+                </Text>
+                <Text font="body" color="fgMuted">
+                  Test the X402 escrow contract functions
+                </Text>
+              </Box>
 
-            <button
-              onClick={handleCheckPayment}
-              disabled={!orderId}
-              className={styles.btnPrimary}
-              style={{ marginTop: '1rem', background: '#6366f1' }}
-            >
-              🔍 Check Payment Status
-            </button>
+              {/* Wallet Connection */}
+              <HStack justifyContent="center">
+                <ConnectButton />
+              </HStack>
 
-            {/* Status */}
-            {status && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem' }}>
-                <h3>📊 Status</h3>
-                <div style={{ fontSize: '14px', marginTop: '1rem', wordBreak: 'break-all' }}>
-                  {status}
-                </div>
-                {lastTxHash && (
-                  <div style={{ marginTop: '1rem' }}>
-                    <a
-                      href={`https://sepolia.basescan.org/tx/${lastTxHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: '#0E76FD', textDecoration: 'underline' }}
+              {!isConnected ? (
+                <Text textAlign="center" color="fgMuted">
+                  👆 Connect your wallet to test the escrow contract
+                </Text>
+              ) : (
+                <VStack gap={6}>
+                  {/* Contract Info */}
+                  <Box 
+                    backgroundColor="bgElevation1" 
+                    padding={4} 
+                    borderRadius="300"
+                  >
+                    <VStack gap={2}>
+                      <Text font="title3" as="h3">📄 Contract Info</Text>
+                      <Divider />
+                      <VStack gap={1}>
+                        <Text><strong>Contract:</strong> {escrowAddress}</Text>
+                        <Text><strong>Merchant:</strong> {merchantWallet as string}</Text>
+                        <Text><strong>Timeout:</strong> {timeout ? `${timeout.toString()} seconds (15 min)` : 'Loading...'}</Text>
+                        <Text><strong>Your Address:</strong> {address}</Text>
+                      </VStack>
+                    </VStack>
+                  </Box>
+
+                  {/* Order ID Input */}
+                  <VStack gap={2}>
+                    <TextInput
+                      label="Order ID (for testing)"
+                      value={orderId}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOrderId(e.target.value)}
+                      placeholder="e.g., test-123 or payment-abc"
+                      helperText="💡 Use a unique ID for each test payment"
+                      end={
+                        <Button
+                          onClick={generateRandomOrderId}
+                          variant="secondary"
+                          compact
+                        >
+                          🎲 Random
+                        </Button>
+                      }
+                    />
+                  </VStack>
+
+                  {/* Create Payment */}
+                  <VStack gap={2}>
+                    <TextInput
+                      label="Amount (ETH)"
+                      value={amount}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
+                      placeholder="0.01"
+                    />
+                    <Button
+                      onClick={handleCreatePayment}
+                      disabled={isCreating || isCreateLoading || !orderId}
+                      variant="primary"
                     >
-                      View on BaseScan →
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
+                      {isCreating || isCreateLoading ? '⏳ Creating Payment...' : '💰 Create Payment (Lock ETH)'}
+                    </Button>
+                    <Text font="caption" color="fgMuted">
+                      This locks your ETH in the escrow contract
+                    </Text>
+                  </VStack>
 
-            {/* Payment Details */}
-            {paymentData && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem' }}>
-                <h3>💳 Payment Details</h3>
-                <div style={{ fontSize: '14px', marginTop: '1rem' }}>
-                  <div><strong>Payer:</strong> {paymentData[0]}</div>
-                  <div><strong>Amount:</strong> {formatEther(paymentData[1])} ETH</div>
-                  <div><strong>Timestamp:</strong> {new Date(Number(paymentData[2]) * 1000).toLocaleString()}</div>
-                  <div><strong>Completed:</strong> {paymentData[3] ? '✅ Yes' : '❌ No'}</div>
-                  <div style={{ marginTop: '1rem', padding: '1rem', background: paymentData[3] ? '#d1fae5' : '#fef3c7', borderRadius: '8px' }}>
-                    {paymentData[3] ? (
-                      '✅ This payment has been completed (confirmed or refunded)'
-                    ) : (
-                      '⏳ This payment is still in escrow. You can confirm it or wait 15 minutes to refund.'
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+                  {/* Action Buttons */}
+                  <HStack gap={3} flexWrap="wrap">
+                    <Box flexGrow={1} width={{ base: '100%', tablet: 'auto' }}>
+                      <Button
+                        onClick={handleConfirmPayment}
+                        disabled={isConfirming || isConfirmLoading || !orderId}
+                        variant="positive"
+                        width="100%"
+                      >
+                        {isConfirming || isConfirmLoading ? '⏳ Confirming...' : '✅ Confirm Payment'}
+                      </Button>
+                    </Box>
+                    
+                    <Box flexGrow={1} width={{ base: '100%', tablet: 'auto' }}>
+                      <Button
+                        onClick={handleRefundPayment}
+                        disabled={isRefunding || isRefundLoading || !orderId}
+                        variant="secondary" // Negative variant might be too strong, maybe warning color if possible, but secondary is safe
+                        width="100%"
+                      >
+                        {isRefunding || isRefundLoading ? '⏳ Refunding...' : '↩️ Refund (After Timeout)'}
+                      </Button>
+                    </Box>
+                  </HStack>
 
-            {/* Instructions */}
-            <div className={styles.resultCard} style={{ marginTop: '2rem', background: '#f0f9ff' }}>
-              <h3>📖 Testing Instructions</h3>
-              <ol style={{ fontSize: '14px', lineHeight: '1.8', paddingLeft: '1.5rem', margin: '1rem 0' }}>
-                <li><strong>Create Payment:</strong> Enter an order ID and amount, then click "Create Payment" to lock ETH in escrow</li>
-                <li><strong>Confirm Payment:</strong> Click "Confirm Payment" to release funds to the merchant (simulates successful agent completion)</li>
-                <li><strong>Refund:</strong> Wait 15 minutes after creating a payment, then click "Refund" to get your ETH back (simulates timeout)</li>
-                <li><strong>Check Status:</strong> Use "Check Payment Status" to see current payment details</li>
-              </ol>
-              <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', marginTop: '1rem' }}>
-                <strong>⚠️ Note:</strong> This is for testing only! In production, only your backend should call confirmPayment.
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+                  <Button
+                    onClick={handleCheckPayment}
+                    disabled={!orderId}
+                    variant="secondary"
+                  >
+                    🔍 Check Payment Status
+                  </Button>
+
+                  {/* Status */}
+                  {status && (
+                    <Banner
+                      variant={status.includes('Error') ? 'error' : status.includes('✅') ? 'informational' : 'warning'}
+                      title="Status"
+                      startIcon={status.includes('Error') ? 'error' : status.includes('✅') ? 'checkmark' : 'info'}
+                      startIconActive
+                      styleVariant="inline"
+                    >
+                      <VStack gap={2}>
+                        <Text>{status}</Text>
+                        {lastTxHash && (
+                          <Link
+                            href={`https://sepolia.basescan.org/tx/${lastTxHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            color="primary"
+                          >
+                            View on BaseScan →
+                          </Link>
+                        )}
+                      </VStack>
+                    </Banner>
+                  )}
+
+                  {/* Payment Details */}
+                  {paymentData && (
+                    <Box 
+                      backgroundColor="bgElevation1" 
+                      padding={4} 
+                      borderRadius="300"
+                    >
+                      <VStack gap={2}>
+                        <Text font="title3" as="h3">💳 Payment Details</Text>
+                        <Divider />
+                        <VStack gap={1}>
+                          <Text><strong>Payer:</strong> {paymentData[0]}</Text>
+                          <Text><strong>Amount:</strong> {formatEther(paymentData[1])} ETH</Text>
+                          <Text><strong>Timestamp:</strong> {new Date(Number(paymentData[2]) * 1000).toLocaleString()}</Text>
+                          <Text><strong>Completed:</strong> {paymentData[3] ? '✅ Yes' : '❌ No'}</Text>
+                        </VStack>
+                        <Banner 
+                          variant={paymentData[3] ? 'informational' : 'warning'}
+                          startIcon={paymentData[3] ? 'checkmark' : 'clock'}
+                          startIconActive
+                          styleVariant="inline"
+                        >
+                          {paymentData[3] ? (
+                            '✅ This payment has been completed (confirmed or refunded)'
+                          ) : (
+                            '⏳ This payment is still in escrow. You can confirm it or wait 15 minutes to refund.'
+                          )}
+                        </Banner>
+                      </VStack>
+                    </Box>
+                  )}
+
+                  {/* Instructions */}
+                  <Box 
+                    backgroundColor="bgElevation1" 
+                    padding={4} 
+                    borderRadius="300"
+                  >
+                    <VStack gap={2}>
+                      <Text font="title3" as="h3">📖 Testing Instructions</Text>
+                      <VStack as="ol" gap={2} paddingStart={4}>
+                        <Text as="li"><strong>Create Payment:</strong> Enter an order ID and amount, then click "Create Payment" to lock ETH in escrow</Text>
+                        <Text as="li"><strong>Confirm Payment:</strong> Click "Confirm Payment" to release funds to the merchant (simulates successful agent completion)</Text>
+                        <Text as="li"><strong>Refund:</strong> Wait 15 minutes after creating a payment, then click "Refund" to get your ETH back (simulates timeout)</Text>
+                        <Text as="li"><strong>Check Status:</strong> Use "Check Payment Status" to see current payment details</Text>
+                      </VStack>
+                      <Banner 
+                        variant="warning" 
+                        title="Note"
+                        startIcon="warning"
+                        startIconActive
+                        styleVariant="inline"
+                      >
+                        This is for testing only! In production, only your backend should call confirmPayment.
+                      </Banner>
+                    </VStack>
+                  </Box>
+                </VStack>
+              )}
+            </VStack>
+          </ContentCardBody>
+        </ContentCard>
+      </Box>
+    </Box>
   );
 }
-

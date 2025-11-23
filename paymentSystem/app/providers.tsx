@@ -7,18 +7,24 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { config } from '@/lib/wagmiConfig';
 import { baseSepolia } from 'wagmi/chains';
 import { useState } from 'react';
+import { ThemeProvider, MediaQueryProvider } from '@coinbase/cds-web/system';
+import { defaultTheme } from '@coinbase/cds-web/themes/defaultTheme';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider initialChain={baseSepolia}>
-          {children}
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <MediaQueryProvider>
+      <ThemeProvider theme={defaultTheme} activeColorScheme="light">
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            <RainbowKitProvider initialChain={baseSepolia}>
+              {children}
+            </RainbowKitProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </ThemeProvider>
+    </MediaQueryProvider>
   );
 }
 
