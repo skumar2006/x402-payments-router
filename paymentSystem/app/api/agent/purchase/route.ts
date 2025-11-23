@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { createWalletClient, createPublicClient, http } from 'viem';
+import { createWalletClient, createPublicClient, http, formatEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 import { escrowABI } from '@/lib/escrowABI';
@@ -33,44 +33,42 @@ export async function POST(request: NextRequest) {
   const body: PurchaseRequest = await request.json();
   const { request: purchaseRequest, paymentProof } = body;
 
-  // Get product price from agent API if not provided
-  let productPrice = purchaseRequest.productPrice;
-  
-  if (!productPrice) {
-    // Call agent API to get the price
+  // If no payment provided, get pricing from x402 agent and return 402
+  if (!paymentProof) {
+    let x402PaymentDetails = null;
+    
+    // Call x402 agent to get the 402 response with pricing
     try {
-      const agentPrice = await getProductPrice(purchaseRequest.query);
-      if (!agentPrice) {
-    return NextResponse.json(
-          { error: 'Could not determine product price from agent' },
-      { status: 400 }
-    );
+      x402PaymentDetails = await getX402PaymentDetails(purchaseRequest.query);
+      if (!x402PaymentDetails) {
+        return NextResponse.json(
+          { error: 'Could not get payment details from x402 agent' },
+          { status: 400 }
+        );
       }
-      productPrice = agentPrice;
     } catch (error: any) {
       return NextResponse.json(
-        { error: 'Failed to fetch product price: ' + error.message },
+        { error: 'Failed to call x402 agent: ' + error.message },
         { status: 500 }
       );
     }
-  }
 
-  // Calculate total payment: agent fee + product cost
-  const agentFee = AGENT_FEE;
-  const totalAmount = agentFee + productPrice;
+    // Use x402 agent's pricing (it already includes everything)
+    const totalAmount = parseFloat(x402PaymentDetails.payment.amount);
+    const x402PaymentId = x402PaymentDetails.payment.id;
+    const x402OrderId = x402PaymentDetails.payment.orderId;
+    const paymentId = x402PaymentId || crypto.randomUUID();
 
-  // If no payment provided, return 402 with payment instructions
-  if (!paymentProof) {
-    const paymentId = crypto.randomUUID();
-
-    // Store pending payment
+    // Store pending payment with x402 details
     pendingPayments.set(paymentId, {
-      totalAmount: totalAmount.toFixed(2),
-      agentFee: agentFee.toFixed(2),
-      productPrice: productPrice.toFixed(2),
+      totalAmount: totalAmount.toFixed(6),
+      x402PaymentId: x402PaymentId,
+      x402OrderId: x402OrderId,
       request: purchaseRequest,
       timestamp: Date.now(),
     });
+
+    const escrowAddress = getEscrowContractAddress();
 
     return NextResponse.json(
       {
@@ -81,16 +79,14 @@ export async function POST(request: NextRequest) {
           currency: 'ETH',
           token: 'ETH',
           network: 'base-sepolia',
-          recipient: MERCHANT_WALLET,
+          recipient: escrowAddress, // Pay to escrow, not merchant
+          orderId: x402OrderId, // Include orderId for escrow
           facilitator: FACILITATOR_URL,
           description: `Agent purchase: ${purchaseRequest.query}`,
 
-          // Breakdown of payment
-          breakdown: {
-            productPrice: productPrice.toFixed(6),
-            agentFee: agentFee.toFixed(6),
+          // Breakdown from x402 agent
+          breakdown: x402PaymentDetails?.payment.breakdown || {
             total: totalAmount.toFixed(6),
-            walletAddress: MERCHANT_WALLET, // Where to send ETH
           },
 
           // Payment instructions
@@ -101,26 +97,40 @@ export async function POST(request: NextRequest) {
             settleEndpoint: `${FACILITATOR_URL}/settle`,
           },
         },
-        message: `Please submit payment of ${totalAmount.toFixed(6)} ETH (${agentFee.toFixed(6)} agent fee + ${productPrice.toFixed(6)} product cost)`,
+        message: `Please submit payment of ${totalAmount.toFixed(6)} ETH to escrow`,
       },
       { status: 402 }
     );
   }
 
-  // If payment provided, verify it
+  // Payment proof provided - verify it
   const { paymentId, signature, transactionHash } = paymentProof;
 
-  // Check if payment exists
+  console.log('💳 Payment proof received');
+  console.log('   Payment ID:', paymentId);
+  console.log('   Transaction Hash:', transactionHash);
+
+  // Check if payment exists in our storage
   const pendingPayment = pendingPayments.get(paymentId);
   if (!pendingPayment) {
+    console.error('❌ Payment ID not found in pending payments');
+    console.error('   Available payment IDs:', Array.from(pendingPayments.keys()));
     return NextResponse.json(
       { error: 'Invalid payment ID' },
       { status: 400 }
     );
   }
 
-  // Verify payment
-  const paymentValid = await mockVerifyPayment(paymentProof, pendingPayment);
+  console.log('✅ Found pending payment');
+  console.log('   x402 Order ID:', pendingPayment.x402OrderId);
+  console.log('   Amount:', pendingPayment.totalAmount, 'ETH');
+
+  // Wait a moment for blockchain state to update
+  console.log('⏳ Waiting 2 seconds for blockchain confirmation...');
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // Verify payment using the x402 orderId from when we first got the 402 response
+  const paymentValid = await mockVerifyPayment(paymentProof, pendingPayment, pendingPayment.x402OrderId);
 
   if (!paymentValid) {
     return NextResponse.json(
@@ -139,19 +149,37 @@ export async function POST(request: NextRequest) {
     completedAt: Date.now(),
   });
 
-  // Execute the agent workflow (calls external API or falls back to mock)
-  const result = await executeAgentWorkflow(purchaseRequest);
+  // Execute the agent workflow (calls x402 agent with payment proof)
+  const result = await executeAgentWorkflow(purchaseRequest, {
+    paymentId: pendingPayment.x402PaymentId || paymentId,
+    transactionHash: transactionHash,
+  });
 
-  // If agent completed successfully, confirm payment on-chain
-  let escrowConfirmation = null;
-  if (result.status === 'completed') {
-    try {
-      escrowConfirmation = await confirmPaymentOnChain(paymentId);
-      console.log('✅ Payment confirmed on-chain:', escrowConfirmation);
-    } catch (error: any) {
-      console.error('❌ Failed to confirm on-chain:', error.message);
-      console.warn('⚠️  Payment will auto-refund after 15 minutes if not confirmed');
-    }
+  // Check if x402 agent completed successfully
+  // The x402 agent already confirms the payment on-chain, so we just check the result
+  let escrowConfirmation = result.confirmationHash || null;
+  let escrowStatus = 'pending'; // Track the actual escrow status
+  
+  if (result.status === 'completed' && result.transactionId && result.confirmationHash) {
+    // x402 agent successfully completed purchase and confirmed on-chain
+    escrowStatus = 'confirmed';
+    console.log('✅ x402 agent completed with Amazon Transaction ID:', result.transactionId);
+    console.log('✅ x402 agent confirmed payment on-chain:', result.confirmationHash);
+  } else if (result.status === 'completed' && result.transactionId && !result.confirmationHash) {
+    // Agent completed purchase but didn't confirm on-chain
+    escrowStatus = 'no_confirmation';
+    console.warn('⚠️  x402 agent completed purchase but did not confirm on-chain');
+    console.warn('⚠️  Payment will remain in escrow and can be refunded after 5 minutes');
+  } else if (result.status === 'completed' && !result.transactionId) {
+    // Agent completed but didn't return transaction ID
+    escrowStatus = 'no_transaction_id';
+    console.warn('⚠️  x402 agent completed but did not return Amazon transaction ID');
+    console.warn('⚠️  Payment will remain in escrow and can be refunded after 5 minutes');
+  } else {
+    // Agent didn't complete successfully
+    escrowStatus = 'agent_failed';
+    console.error('❌ x402 agent workflow failed');
+    console.warn('⚠️  Payment will remain in escrow and can be refunded after 5 minutes');
   }
 
   // Return successful response with agent results
@@ -159,10 +187,10 @@ export async function POST(request: NextRequest) {
     success: true,
     paymentId,
     amount: pendingPayment.totalAmount,
-    agentFee: pendingPayment.agentFee,
-    productPrice: pendingPayment.productPrice,
     transactionHash: transactionHash,
     escrowConfirmation,
+    escrowStatus, // Tell frontend the actual status
+    agentTransactionId: result.transactionId || null, // Amazon transaction ID
     result,
   });
 }
@@ -170,8 +198,10 @@ export async function POST(request: NextRequest) {
 /**
  * Confirm payment on escrow smart contract
  * Releases funds from escrow to merchant wallet
+ * @param paymentId - The payment ID from our system
+ * @param agentTransactionId - The transaction ID returned by the agent as proof of purchase
  */
-async function confirmPaymentOnChain(paymentId: string): Promise<any> {
+async function confirmPaymentOnChain(paymentId: string, agentTransactionId: string): Promise<any> {
   const backendPrivateKey = process.env.BACKEND_PRIVATE_KEY;
   
   if (!backendPrivateKey) {
@@ -180,12 +210,14 @@ async function confirmPaymentOnChain(paymentId: string): Promise<any> {
 
   console.log('📤 Confirming payment on-chain...');
   console.log('   Payment ID:', paymentId);
+  console.log('   Agent Transaction ID:', agentTransactionId);
 
   const orderId = generateOrderId(paymentId);
   const escrowAddress = getEscrowContractAddress();
 
   console.log('   Order ID:', orderId);
   console.log('   Escrow Contract:', escrowAddress);
+  console.log('   🔐 Proof of Purchase: Agent returned transaction ID -', agentTransactionId);
 
   const account = privateKeyToAccount(`0x${backendPrivateKey}` as `0x${string}`);
   
@@ -217,20 +249,22 @@ async function confirmPaymentOnChain(paymentId: string): Promise<any> {
 
   console.log('✅ Funds released to merchant!');
   console.log('   Block:', receipt.blockNumber);
+  console.log('   💰 Payment confirmed based on agent transaction ID:', agentTransactionId);
 
   return {
     transactionHash: receipt.transactionHash,
     blockNumber: receipt.blockNumber.toString(),
     status: 'confirmed',
+    agentTransactionId,
   };
 }
 
 /**
- * Get product price from agent API
- * Calls the agent's /agent/execute endpoint to get pricing info
+ * Get payment details from x402 agent
+ * The x402 agent returns a 402 Payment Required with all payment info
  */
-async function getProductPrice(query: string): Promise<number | null> {
-  console.log('🔍 Fetching product price from agent for:', query);
+async function getX402PaymentDetails(product: string): Promise<any | null> {
+  console.log('🔍 Calling x402 agent to get payment details for:', product);
 
   try {
     const headers: Record<string, string> = {
@@ -245,78 +279,116 @@ async function getProductPrice(query: string): Promise<number | null> {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        query: query,
-        metadata: {
-          timestamp: new Date().toISOString(),
-          priceOnly: true, // Flag to indicate we just want price info
-        },
+        product: product, // x402 agent expects "product"
       }),
     });
 
-    if (!response.ok) {
-      console.error('❌ Agent API error:', response.status);
-      return null;
+    // x402 agent returns 402 Payment Required with pricing
+    if (response.status === 402) {
+      const result = await response.json();
+      console.log('✅ Got 402 response from x402 agent');
+      console.log('   Payment ID:', result.payment?.id);
+      console.log('   Amount:', result.payment?.amount, 'ETH');
+      console.log('   Order ID:', result.payment?.orderId);
+      return result;
     }
 
-    const result = await response.json();
-    
-    if (result.product && result.product.price) {
-      const price = typeof result.product.price === 'number' 
-        ? result.product.price 
-        : parseFloat(result.product.price);
-      
-      console.log('✅ Got product price from agent:', price);
-      return price;
-    }
-
-    console.error('❌ Agent response missing product price');
+    // If not 402, something went wrong
+    console.error('❌ Unexpected response from x402 agent:', response.status);
+    const errorData = await response.json().catch(() => ({}));
+    console.error('   Response:', errorData);
     return null;
   } catch (error: any) {
-    console.error('❌ Failed to fetch product price:', error.message);
+    console.error('❌ Failed to call x402 agent:', error.message);
     return null;
   }
 }
 
 /**
- * Mock function to verify payment
+ * Verify payment by checking the escrow contract
  */
 async function mockVerifyPayment(
   paymentProof: any,
-  pendingPayment: any
+  pendingPayment: any,
+  x402OrderId?: string
 ): Promise<boolean> {
-  // Simulate async verification
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // For demo purposes, accept any payment proof with required fields
-  if (paymentProof.signature && paymentProof.paymentId) {
-    console.log('✅ Payment verified (mock):', {
-      paymentId: paymentProof.paymentId,
-      totalAmount: pendingPayment.totalAmount,
-      agentFee: pendingPayment.agentFee,
-      productPrice: pendingPayment.productPrice,
-    });
-    return true;
+  console.log('🔍 Verifying payment on escrow contract...');
+  
+  if (!paymentProof.signature || !paymentProof.paymentId) {
+    console.error('❌ Missing payment proof fields');
+    return false;
   }
 
-  return false;
+  try {
+    // Use x402 orderId if provided, otherwise generate from paymentId
+    const orderId = x402OrderId || generateOrderId(paymentProof.paymentId);
+    const escrowAddress = getEscrowContractAddress();
+    
+    console.log('   Using Order ID:', orderId);
+    console.log('   (from x402 agent)' + (x402OrderId ? ' ✅' : ' ❌ FALLBACK'));
+
+    const publicClient = createPublicClient({
+      chain: baseSepolia,
+      transport: http(),
+    });
+
+    // Read payment details from escrow contract
+    const paymentData = await publicClient.readContract({
+      address: escrowAddress,
+      abi: escrowABI,
+      functionName: 'getPayment',
+      args: [orderId],
+    }) as [string, bigint, bigint, boolean];
+
+    const [payer, amount, timestamp, completed] = paymentData;
+
+    console.log('📊 Escrow contract payment status:', {
+      orderId,
+      payer,
+      amount: formatEther(amount),
+      timestamp: new Date(Number(timestamp) * 1000).toISOString(),
+      completed,
+    });
+
+    // Check if payment exists (amount > 0) and not completed
+    if (amount === 0n) {
+      console.error('❌ Payment not found in escrow contract');
+      return false;
+    }
+
+    if (completed) {
+      console.error('❌ Payment already completed');
+      return false;
+    }
+
+    console.log('✅ Payment verified in escrow contract:', {
+      paymentId: paymentProof.paymentId,
+      amount: formatEther(amount),
+      payer,
+    });
+
+    return true;
+  } catch (error: any) {
+    console.error('❌ Failed to verify payment on escrow:', error.message);
+    return false;
+  }
 }
 
 /**
- * Execute agent workflow by calling external API
- * Falls back to mock if AGENT_API_ENDPOINT is not configured or fails
+ * Execute agent workflow by calling x402 agent with payment proof
  */
-async function executeAgentWorkflow(request: any): Promise<any> {
-  console.log('🤖 Executing agent workflow');
-  console.log('📝 Request:', request);
-  console.log('🔌 Agent API Endpoint:', AGENT_API_ENDPOINT);
+async function executeAgentWorkflow(request: any, paymentProof: any): Promise<any> {
+  console.log('🤖 Executing x402 agent workflow');
+  console.log('📝 Product:', request.query);
+  console.log('💳 Payment Proof:', paymentProof);
+  console.log('🔌 x402 Agent Endpoint:', AGENT_API_ENDPOINT);
 
   try {
-    // Call the external agent API
+    // Call the x402 agent with payment proof
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    // Add API key if configured
     if (AGENT_API_KEY) {
       headers['Authorization'] = `Bearer ${AGENT_API_KEY}`;
     }
@@ -325,43 +397,39 @@ async function executeAgentWorkflow(request: any): Promise<any> {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        query: request.query,
-        productPrice: request.productPrice,
-        metadata: {
-          timestamp: new Date().toISOString(),
-        },
+        product: request.query, // x402 agent expects "product"
+        paymentProof: paymentProof,
       }),
     });
 
     if (!response.ok) {
-      console.error('❌ Agent API error:', response.status, response.statusText);
-      throw new Error(`Agent API returned ${response.status}`);
+      console.error('❌ x402 agent error:', response.status, response.statusText);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('   Error response:', errorData);
+      throw new Error(`x402 agent returned ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('✅ Agent workflow completed successfully');
+    console.log('✅ x402 agent completed successfully');
+    console.log('   Amazon Transaction ID:', result.amazonTransactionId);
+    console.log('   Confirmation Hash:', result.confirmationHash);
     
-    return result;
-  } catch (error: any) {
-    console.error('❌ Agent API call failed:', error.message);
-    console.log('⚠️  Falling back to mock agent response');
-
-    // Fallback to mock response if API fails
+    // Return in format that matches our expected structure
     return {
-      status: 'completed',
-      orderId: `MOCK-${Date.now()}`,
-      product: {
-        name: request.query,
-        price: `$${request.productPrice.toFixed(2)}`,
-        vendor: 'Mock Vendor',
-        url: 'https://example.com/mock-product',
-      },
-      proof: {
-        type: 'order_confirmation',
-        timestamp: new Date().toISOString(),
-        note: 'This is a mock response. Configure AGENT_API_ENDPOINT to use real agent.',
-      },
-      message: 'Mock order placed (Agent API not configured or unavailable)',
+      status: result.success ? 'completed' : 'failed',
+      transactionId: result.amazonTransactionId, // This is the proof!
+      confirmationHash: result.confirmationHash,
+      product: result.product,
+      message: result.message,
+    };
+  } catch (error: any) {
+    console.error('❌ x402 agent call failed:', error.message);
+    
+    // Return failed status (don't fallback to mock)
+    return {
+      status: 'failed',
+      error: error.message,
+      message: 'x402 agent failed to complete purchase',
     };
   }
 }

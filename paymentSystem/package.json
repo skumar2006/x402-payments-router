@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "auto-refund": "tsx scripts/auto-refund-service.ts"
   },
   "dependencies": {
     "@coinbase/coinbase-sdk": "^0.25.0",

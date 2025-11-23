@@ -262,6 +262,18 @@
   color: white;
 }
 
+.tagWarning {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  background: #fef3c7;
+  color: #f59e0b;
+  border: 1px solid #f59e0b;
+}
+
 .priceInput {
   width: 100%;
   padding: 12px;
@@ -306,3 +318,155 @@
   box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
 }
 
+
+/* Wallet Section Styles */
+.walletSection {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  color: white;
+}
+
+.walletHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.walletTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: white;
+}
+
+.walletAddress {
+  font-family: monospace;
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.95;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.btnTopUp {
+  background: white;
+  color: #667eea;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btnTopUp:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.balanceSection {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.balanceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.balanceLabel {
+  font-weight: 700;
+  font-size: 1rem;
+  color: white;
+}
+
+.btnRefresh {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.btnRefresh:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btnRefresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.balanceList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.balanceItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.asset {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  font-family: monospace;
+}
+
+.balanceLoading {
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+  margin: 0;
+  text-align: center;
+}
+
+.emptyBalance {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  margin: 0;
+  text-align: center;
+}
+
+.btnCopyLink {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s;
+  display: inline-block;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnCopyLink:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}

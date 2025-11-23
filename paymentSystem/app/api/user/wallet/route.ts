@@ -7,13 +7,21 @@ import { getOrCreateUserWallet } from '@/lib/userWallet';
  */
 export async function POST(request: NextRequest) {
   try {
-    const { phoneNumber } = await request.json();
+    let { phoneNumber } = await request.json();
 
     if (!phoneNumber) {
       return NextResponse.json(
         { error: 'Phone number is required' },
         { status: 400 }
       );
+    }
+
+    // Normalize phone number - remove spaces, dashes, parentheses
+    phoneNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    
+    // Add +1 if not present
+    if (!phoneNumber.startsWith('+')) {
+      phoneNumber = phoneNumber.startsWith('1') ? '+' + phoneNumber : '+1' + phoneNumber;
     }
 
     // Validate phone number format (basic validation)
