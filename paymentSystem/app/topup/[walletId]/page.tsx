@@ -5,11 +5,19 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther } from 'viem';
-import styles from './topup.module.css';
+import { Loader2, Wallet, CreditCard, ArrowLeft, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 
 interface WalletInfo {
   address: string;
   walletId: string;
+  phoneNumber?: string;
 }
 
 interface Balance {
@@ -67,6 +75,7 @@ export default function TopUpPage() {
         setWalletInfo({
           address: data.address,
           walletId: walletId,
+          phoneNumber: data.phoneNumber || 'N/A'
         });
 
         setBalance(data.balances || {});
@@ -289,346 +298,281 @@ export default function TopUpPage() {
   // Show loading or error state
   if (isLoading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <h1 className={styles.title}>💳 Top Up Your Wallet</h1>
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <div className={styles.spinner}></div>
-            <p>Loading wallet information...</p>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <Card className="w-full max-w-md">
+           <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
+             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+             <p className="text-muted-foreground">Loading wallet information...</p>
+           </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error || !walletInfo) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card}>
-          <h1 className={styles.title}>💳 Top Up Your Wallet</h1>
-          <div style={{ textAlign: 'center', padding: '3rem' }}>
-            <p style={{ color: '#e53e3e', fontSize: '1.1rem', marginBottom: '1rem' }}>
-              ❌ {error || 'Wallet not found'}
-            </p>
-            <p style={{ color: '#718096', marginBottom: '2rem' }}>
-              The wallet ID in this link is invalid or doesn't exist.
-            </p>
-            <button
-              className={styles.btnPrimary}
-              onClick={() => router.push('/')}
-            >
-              ← Go to Home
-            </button>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <Card className="w-full max-w-md border-destructive/50">
+          <CardHeader>
+             <CardTitle className="text-destructive flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" /> Error
+             </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-lg font-medium">{error || 'Wallet not found'}</p>
+            <p className="text-muted-foreground">The wallet ID in this link is invalid or doesn't exist.</p>
+            <Button onClick={() => router.push('/')} variant="secondary">
+               <ArrowLeft className="mr-2 h-4 w-4" /> Go to Home
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   // Show top-up interface
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h1 className={styles.title}>💳 Top Up Your Wallet</h1>
+    <div className="min-h-screen p-4 bg-gray-50 flex items-center justify-center">
+      <Card className="w-full max-w-lg shadow-lg">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold flex items-center gap-2">
+              <CreditCard className="h-6 w-6 text-primary" /> Top Up Wallet
+            </CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
+               <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+          </div>
+          <CardDescription>Add funds to your x402 agent wallet</CardDescription>
+        </CardHeader>
         
-        <div className={styles.walletInfo}>
-          <h3>Your Wallet</h3>
-          <div className={styles.infoRow}>
-            <span className={styles.label}>Address:</span>
-            <span className={styles.value}>{walletInfo.address}</span>
+        <CardContent className="space-y-6">
+          {/* Wallet Info */}
+          <div className="bg-secondary/30 p-4 rounded-lg space-y-3 border">
+            <h3 className="font-medium text-sm flex items-center gap-2">
+                <Wallet className="h-4 w-4" /> Your Wallet
+            </h3>
+            <div className="grid gap-1">
+               <div className="flex justify-between text-xs">
+                 <span className="text-muted-foreground">Address</span>
+                 <span className="font-mono text-xs truncate max-w-[200px]" title={walletInfo.address}>{walletInfo.address}</span>
+               </div>
+               <div className="flex justify-between text-xs">
+                 <span className="text-muted-foreground">Phone</span>
+                 <span className="font-medium">{walletInfo.phoneNumber}</span>
+               </div>
+            </div>
           </div>
-          <div className={styles.infoRow}>
-            <span className={styles.label}>Phone:</span>
-            <span className={styles.value}>{walletInfo.phoneNumber}</span>
-          </div>
-        </div>
 
-        <div className={styles.balanceSection}>
-          <div className={styles.balanceHeader}>
-            <h3>Current Balance</h3>
-            <button 
-              onClick={handleRefreshBalance}
-              className={styles.btnRefresh}
-              disabled={loadingBalance}
-            >
-              {loadingBalance ? '⏳' : '🔄'} Refresh
-            </button>
-          </div>
-          
-          {loadingBalance ? (
-            <p>Loading balance...</p>
-          ) : Object.keys(balance).length > 0 ? (
-            <div className={styles.balanceList}>
-              {Object.entries(balance).map(([asset, amount]) => (
-                <div key={asset} className={styles.balanceItem}>
-                  <span className={styles.asset}>{asset}</span>
-                  <span className={styles.amount}>{amount}</span>
-                </div>
-              ))}
+          {/* Balance Section */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+               <h3 className="font-medium text-sm">Current Balance</h3>
+               <Button 
+                 variant="ghost" 
+                 size="sm" 
+                 className="h-8 text-xs"
+                 onClick={handleRefreshBalance}
+                 disabled={loadingBalance}
+               >
+                 <RefreshCw className={`mr-2 h-3 w-3 ${loadingBalance ? 'animate-spin' : ''}`} />
+                 Refresh
+               </Button>
             </div>
-          ) : (
-            <p className={styles.emptyBalance}>No balance yet. Top up to get started!</p>
-          )}
-        </div>
-
-        {/* Top-up method selector */}
-        <div className={styles.methodSelector}>
-          <button
-            type="button"
-            className={`${styles.methodButton} ${!showExternalWallet ? styles.active : ''}`}
-            onClick={() => setShowExternalWallet(false)}
-          >
-             Apple Pay
-          </button>
-          <button
-            type="button"
-            className={`${styles.methodButton} ${showExternalWallet ? styles.active : ''}`}
-            onClick={() => setShowExternalWallet(true)}
-          >
-            💼 External Wallet
-          </button>
-        </div>
-
-        {!showApplePay && !showExternalWallet ? (
-          <form onSubmit={handleTopUp} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="email">Email Address</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                required
-                className={styles.input}
-              />
-              <p className={styles.helperText}>
-                📧 Required for payment verification
-              </p>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="amount">Amount (USD)</label>
-              <input
-                type="number"
-                id="amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                min="10"
-                max="500"
-                step="1"
-                required
-                className={styles.input}
-              />
-              <p className={styles.helperText}>
-                💵 Minimum: $10 | Maximum: $500
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              className={styles.btnPrimary}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Creating Order...' : ' Pay with Apple Pay'}
-            </button>
-
-            <div className={styles.buttonGroup}>
-              <button
-                type="button"
-                className={styles.btnSecondary}
-                onClick={() => router.push('/')}
-              >
-                ← Back to Home
-              </button>
-            </div>
-          </form>
-        ) : showExternalWallet ? (
-          <div className={styles.externalWalletSection}>
-            <h3>Top Up with External Wallet</h3>
             
-              {!isConnected ? (
-              <div className={styles.walletSelectionPrompt}>
-                <div className={styles.walletIcon}>💼</div>
-                <h4>Which wallet would you like to transfer funds from?</h4>
-                <p>Connect your wallet to send ETH or USDC directly to your CDP wallet address.</p>
-                
-                <div className={styles.walletOptionsInfo}>
-                  <div className={styles.walletOption}>
-                    <span className={styles.walletEmoji}>🦊</span>
-                    <span>MetaMask</span>
-                  </div>
-                  <div className={styles.walletOption}>
-                    <span className={styles.walletEmoji}>🌈</span>
-                    <span>Rainbow</span>
-                  </div>
-                  <div className={styles.walletOption}>
-                    <span className={styles.walletEmoji}>💎</span>
-                    <span>Coinbase Wallet</span>
-                  </div>
-                  <div className={styles.walletOption}>
-                    <span className={styles.walletEmoji}>🔗</span>
-                    <span>WalletConnect</span>
-                  </div>
-                  <div className={styles.walletOption}>
-                    <span className={styles.walletEmoji}>➕</span>
-                    <span>And more...</span>
-                  </div>
-                </div>
-
-                <div className={styles.connectButtonWrapper}>
-                  <ConnectButton.Custom>
-                    {({ openConnectModal }) => (
-                      <button 
-                        onClick={openConnectModal}
-                        className={styles.btnConnectWallet}
-                      >
-                        🔓 Select Wallet to Connect
-                      </button>
-                    )}
-                  </ConnectButton.Custom>
-                </div>
-
-                <div className={styles.infoBox} style={{ marginTop: '20px' }}>
-                  <p style={{ margin: 0, fontSize: '14px' }}>
-                    💡 <strong>Safe & Secure:</strong> Your wallet stays in your control. 
-                    We only request your permission to send funds.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className={styles.connectedWalletInfo}>
-                  <div className={styles.connectedBadge}>
-                    <span className={styles.connectedDot}></span>
-                    <span>Wallet Connected</span>
-                  </div>
-                  <div className={styles.walletAddressDisplay}>
-                    <span className={styles.label}>From:</span>
-                    <span className={styles.address}>
-                      {externalAddress?.slice(0, 10)}...{externalAddress?.slice(-8)}
-                    </span>
-                  </div>
-                  <div className={styles.walletAddressDisplay}>
-                    <span className={styles.label}>To (Your CDP Wallet):</span>
-                    <span className={styles.address}>
-                      {walletInfo.address.slice(0, 10)}...{walletInfo.address.slice(-8)}
-                    </span>
-                  </div>
-                  <ConnectButton.Custom>
-                    {({ openAccountModal }) => (
-                      <button 
-                        onClick={openAccountModal}
-                        className={styles.btnChangeWallet}
-                      >
-                        🔄 Change Wallet
-                      </button>
-                    )}
-                  </ConnectButton.Custom>
-                </div>
-
-                <div className={styles.infoBox} style={{ marginBottom: '20px' }}>
-                  <p style={{ margin: '0', fontSize: '14px' }}>
-                    💡 <strong>How it works:</strong> Send ETH or USDC from your connected wallet 
-                    directly to your CDP wallet address. The funds will appear in your balance.
-                  </p>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="externalAmount">Amount (ETH)</label>
-                  <input
-                    type="number"
-                    id="externalAmount"
-                    value={externalWalletAmount}
-                    onChange={(e) => setExternalWalletAmount(e.target.value)}
-                    min="0.001"
-                    step="0.001"
-                    className={styles.input}
-                  />
-                  <p className={styles.helperText}>
-                    💰 Available in your connected wallet
-                  </p>
-                </div>
-
-                {status && (
-                  <div className={styles.statusMessage}>
-                    {status}
-                  </div>
+            <div className="grid grid-cols-2 gap-2">
+                {loadingBalance ? (
+                    <div className="col-span-2 text-center text-sm text-muted-foreground py-2">Loading...</div>
+                ) : Object.keys(balance).length > 0 ? (
+                    Object.entries(balance).map(([asset, amount]) => (
+                        <div key={asset} className="bg-card border rounded p-2 text-center">
+                            <div className="text-xs text-muted-foreground">{asset}</div>
+                            <div className="font-mono font-medium">{parseFloat(amount).toFixed(4)}</div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="col-span-2 text-center text-sm text-muted-foreground py-2 border border-dashed rounded">
+                        No balance yet
+                    </div>
                 )}
-
-                <button
-                  onClick={handleExternalWalletTopUp}
-                  className={styles.btnPrimary}
-                  disabled={isSending || isConfirming}
-                >
-                  {isSending || isConfirming ? '⏳ Processing...' : `💸 Send ${externalWalletAmount} ETH`}
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.btnSecondary}
-                  onClick={() => router.push('/')}
-                  style={{ marginTop: '10px' }}
-                >
-                  ← Back to Home
-                </button>
-              </>
-            )}
-          </div>
-        ) : showApplePay ? (
-          <div className={styles.applePaySection}>
-            <h3>Complete Payment</h3>
-            
-            {status && (
-              <div className={styles.statusMessage}>
-                {status}
-              </div>
-            )}
-
-            <div className={styles.iframeContainer}>
-              <iframe
-                ref={iframeRef}
-                src={paymentLinkUrl}
-                className={styles.applePayIframe}
-                allow="payment"
-                title="Apple Pay"
-              />
             </div>
-
-            <button
-              type="button"
-              className={styles.btnSecondary}
-              onClick={() => {
-                setShowApplePay(false);
-                setPaymentLinkUrl('');
-                setStatus('');
-              }}
-            >
-              Cancel
-            </button>
           </div>
-        ) : null}
 
-        <div className={styles.infoBox}>
-          <h4>ℹ️ About Apple Pay Top-Up</h4>
-          <ul>
-            <li>✅ Fast and secure payments with Apple Pay</li>
-            <li>💳 Supports debit cards (prepaid cards not supported)</li>
-            <li>🔒 Your payment info is never shared with us</li>
-            <li>⚡ Funds typically arrive within minutes</li>
-            <li>🇺🇸 Currently available for US users only</li>
-          </ul>
-        </div>
+          <Separator />
 
-        <button
-          className={styles.btnSecondary}
-          onClick={() => router.push('/')}
-          style={{ marginTop: '20px' }}
-        >
-          ← Back to Home
-        </button>
-      </div>
+          {/* Method Selector */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-secondary/50 rounded-lg">
+            <Button 
+                variant={!showExternalWallet ? "default" : "ghost"}
+                onClick={() => setShowExternalWallet(false)}
+                className="w-full"
+                size="sm"
+            >
+                Apple Pay
+            </Button>
+            <Button 
+                variant={showExternalWallet ? "default" : "ghost"}
+                onClick={() => setShowExternalWallet(true)}
+                className="w-full"
+                size="sm"
+            >
+                Ext. Wallet
+            </Button>
+          </div>
+
+          {!showApplePay && !showExternalWallet ? (
+            <form onSubmit={handleTopUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  📧 Required for payment verification
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount (USD)</Label>
+                <Input
+                  type="number"
+                  id="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  min="10"
+                  max="500"
+                  step="1"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  💵 Minimum: $10 | Maximum: $500
+                </p>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Order...
+                    </>
+                ) : (
+                    'Pay with Apple Pay'
+                )}
+              </Button>
+            </form>
+          ) : showExternalWallet ? (
+            <div className="space-y-6">
+              {!isConnected ? (
+                <div className="text-center space-y-4 py-4">
+                   <div className="p-4 bg-blue-50 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                      <Wallet className="h-8 w-8 text-blue-600" />
+                   </div>
+                   <div>
+                       <h4 className="font-medium">Connect External Wallet</h4>
+                       <p className="text-sm text-muted-foreground mt-1">
+                         Send funds from MetaMask, Rainbow, or Coinbase Wallet
+                       </p>
+                   </div>
+                   <div className="flex justify-center">
+                        <ConnectButton />
+                   </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                   <div className="bg-secondary/30 p-3 rounded text-sm space-y-2 border">
+                      <div className="flex justify-between">
+                         <span className="text-muted-foreground">From:</span>
+                         <span className="font-mono text-xs truncate w-32">{externalAddress}</span>
+                      </div>
+                      <div className="flex justify-between">
+                         <span className="text-muted-foreground">To:</span>
+                         <span className="font-mono text-xs truncate w-32">{walletInfo.address}</span>
+                      </div>
+                   </div>
+
+                   <div className="space-y-2">
+                        <Label htmlFor="externalAmount">Amount (ETH)</Label>
+                        <Input
+                            type="number"
+                            id="externalAmount"
+                            value={externalWalletAmount}
+                            onChange={(e) => setExternalWalletAmount(e.target.value)}
+                            min="0.001"
+                            step="0.001"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            💰 Available in your connected wallet
+                        </p>
+                    </div>
+
+                    {status && (
+                        <Alert>
+                            <AlertTitle>Status</AlertTitle>
+                            <AlertDescription>{status}</AlertDescription>
+                        </Alert>
+                    )}
+
+                    <Button 
+                        onClick={handleExternalWalletTopUp} 
+                        className="w-full"
+                        disabled={isSending || isConfirming}
+                    >
+                        {isSending || isConfirming ? (
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                        ) : (
+                            `Send ${externalWalletAmount} ETH`
+                        )}
+                    </Button>
+                </div>
+              )}
+            </div>
+          ) : showApplePay ? (
+            <div className="space-y-4">
+                <div className="text-center space-y-2">
+                    <h3 className="font-medium">Complete Payment</h3>
+                    {status && <p className="text-sm text-muted-foreground">{status}</p>}
+                </div>
+
+                <div className="w-full h-[60px] border rounded bg-gray-100 flex items-center justify-center overflow-hidden">
+                     <iframe
+                        ref={iframeRef}
+                        src={paymentLinkUrl}
+                        className="w-full h-full border-0"
+                        allow="payment"
+                        title="Apple Pay"
+                    />
+                </div>
+
+                <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                        setShowApplePay(false);
+                        setPaymentLinkUrl('');
+                        setStatus('');
+                    }}
+                >
+                    Cancel
+                </Button>
+            </div>
+          ) : null}
+        </CardContent>
+        
+        <CardFooter className="flex-col gap-4 bg-muted/20 border-t pt-4">
+            <div className="text-xs text-muted-foreground space-y-1 w-full">
+                <p className="font-medium">ℹ️ About Apple Pay Top-Up</p>
+                <ul className="list-disc list-inside pl-1 space-y-0.5">
+                    <li>Fast and secure payments</li>
+                    <li>Supports debit cards</li>
+                    <li>Funds arrive within minutes</li>
+                </ul>
+            </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
-

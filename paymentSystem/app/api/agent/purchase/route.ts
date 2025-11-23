@@ -337,7 +337,7 @@ async function mockVerifyPayment(
       address: escrowAddress,
       abi: escrowABI,
       functionName: 'getPayment',
-      args: [orderId],
+      args: [orderId as `0x${string}`],
     }) as [string, bigint, bigint, boolean];
 
     const [payer, amount, timestamp, completed] = paymentData;

@@ -6,7 +6,6 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther, keccak256, toHex } from 'viem';
 import { escrowABI } from '@/lib/escrowABI';
 import { getEscrowContractAddress } from '@/lib/escrowUtils';
-import styles from '../page.module.css';
 
 export default function TestScenarios() {
   const { address, isConnected } = useAccount();
@@ -153,56 +152,49 @@ export default function TestScenarios() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div style={{ marginBottom: '1rem' }}>
+    <div className="min-h-screen p-4 md:p-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
+        <div className="mb-4">
           <a 
             href="/"
-            style={{ 
-              color: '#667eea', 
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: 500
-            }}
+            className="text-blue-600 hover:underline text-sm font-medium"
           >
             ← Back to Main App
           </a>
         </div>
 
-        <h1 className={styles.title}>🧪 Escrow Test Scenarios</h1>
-        <p className={styles.subtitle}>
+        <h1 className="text-2xl font-bold mb-2">🧪 Escrow Test Scenarios</h1>
+        <p className="text-gray-600 mb-6">
           Test both successful and failed confirmation scenarios
         </p>
 
         {/* Wallet Connection */}
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+        <div className="mb-8 flex justify-center">
           <ConnectButton />
         </div>
 
         {!isConnected ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>
+          <p className="text-center text-gray-600">
             👆 Connect your wallet to start testing
           </p>
         ) : (
           <>
             {/* Contract Info */}
-            <div className={styles.resultCard} style={{ marginBottom: '2rem', background: '#f0f9ff' }}>
-              <h3>📄 Contract Info</h3>
-              <div style={{ fontSize: '14px', marginTop: '1rem' }}>
+            <div className="border rounded-lg p-4 bg-blue-50 mb-8">
+              <h3 className="font-semibold mb-2">📄 Contract Info</h3>
+              <div className="text-sm space-y-2">
                 <div><strong>Escrow Contract:</strong> {escrowAddress}</div>
                 <div><strong>Your Address:</strong> {address}</div>
-                <div style={{ marginTop: '1rem' }}>
+                <div className="mt-4 flex gap-2">
                   <button
                     onClick={handleCheckEscrow}
-                    className={styles.btnPrimary}
-                    style={{ width: 'auto', padding: '8px 16px', fontSize: '14px', marginRight: '8px' }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
                   >
                     🔍 View on BaseScan
                   </button>
                   <button
                     onClick={handleCheckInternalTxs}
-                    className={styles.btnPrimary}
-                    style={{ width: 'auto', padding: '8px 16px', fontSize: '14px', background: '#10b981' }}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
                   >
                     📊 Internal Transactions
                   </button>
@@ -211,44 +203,42 @@ export default function TestScenarios() {
             </div>
 
             {/* Amount Input */}
-            <div className={styles.formGroup}>
-              <label>Test Amount (ETH)</label>
+            <div className="mb-6 space-y-2">
+              <label className="block font-medium">Test Amount (ETH)</label>
               <input
                 type="text"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.005"
-                className={styles.priceInput}
+                className="w-full p-2 border rounded-md"
               />
             </div>
 
             {/* Scenario Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '2rem' }}>
-              <div className={styles.resultCard} style={{ background: '#d1fae5', padding: '1.5rem' }}>
-                <h3 style={{ marginTop: 0, color: '#065f46' }}>✅ Success Scenario</h3>
-                <p style={{ fontSize: '14px', color: '#047857', marginBottom: '1rem' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+              <div className="border rounded-lg p-6 bg-green-50">
+                <h3 className="text-lg font-bold text-green-800 mb-2">✅ Success Scenario</h3>
+                <p className="text-sm text-green-700 mb-4">
                   Test normal flow: Payment → Confirmed → Funds to merchant
                 </p>
                 <button
                   onClick={() => handleStartScenario('success')}
                   disabled={isCreating || isCreateLoading || scenario !== null}
-                  className={styles.btnPrimary}
-                  style={{ background: '#10b981' }}
+                  className="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 font-medium"
                 >
                   {isCreating || isCreateLoading ? '⏳ Creating...' : '🎯 Test Success'}
                 </button>
               </div>
 
-              <div className={styles.resultCard} style={{ background: '#fef3c7', padding: '1.5rem' }}>
-                <h3 style={{ marginTop: 0, color: '#92400e' }}>⚠️ Failure Scenario</h3>
-                <p style={{ fontSize: '14px', color: '#b45309', marginBottom: '1rem' }}>
+              <div className="border rounded-lg p-6 bg-amber-50">
+                <h3 className="text-lg font-bold text-amber-800 mb-2">⚠️ Failure Scenario</h3>
+                <p className="text-sm text-amber-700 mb-4">
                   Test failure: Payment → Not confirmed → Refundable after 15min
                 </p>
                 <button
                   onClick={() => handleStartScenario('failure')}
                   disabled={isCreating || isCreateLoading || scenario !== null}
-                  className={styles.btnPrimary}
-                  style={{ background: '#f59e0b' }}
+                  className="w-full py-2 bg-amber-500 text-white rounded hover:bg-amber-600 disabled:opacity-50 font-medium"
                 >
                   {isCreating || isCreateLoading ? '⏳ Creating...' : '🎯 Test Failure'}
                 </button>
@@ -257,11 +247,10 @@ export default function TestScenarios() {
 
             {/* Test Backend Button */}
             {scenario === 'success' && testPaymentId && isCreateSuccess && (
-              <div style={{ marginTop: '2rem' }}>
+              <div className="mt-8">
                 <button
                   onClick={handleTestBackend}
-                  className={styles.btnPrimary}
-                  style={{ background: '#6366f1' }}
+                  className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-lg"
                 >
                   📡 Call Backend API (Test Full Flow)
                 </button>
@@ -270,7 +259,7 @@ export default function TestScenarios() {
 
             {/* Reset Button */}
             {scenario && (
-              <div style={{ marginTop: '1rem' }}>
+              <div className="mt-4">
                 <button
                   onClick={() => {
                     setScenario(null);
@@ -278,7 +267,7 @@ export default function TestScenarios() {
                     setStatus('');
                     setLogs([]);
                   }}
-                  className={styles.btnSecondary}
+                  className="w-full py-2 border border-gray-300 rounded hover:bg-gray-100 font-medium"
                 >
                   🔄 Reset & Start New Test
                 </button>
@@ -287,9 +276,9 @@ export default function TestScenarios() {
 
             {/* Status */}
             {status && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem' }}>
-                <h3>📊 Status</h3>
-                <div style={{ fontSize: '14px', marginTop: '1rem' }}>
+              <div className="border rounded-lg p-4 bg-gray-50 mt-8">
+                <h3 className="font-semibold mb-2">📊 Status</h3>
+                <div className="text-sm">
                   {status}
                 </div>
               </div>
@@ -297,32 +286,25 @@ export default function TestScenarios() {
 
             {/* Test Info */}
             {testPaymentId && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem', background: '#f8f9fa' }}>
-                <h3>🧪 Test Info</h3>
-                <div style={{ fontSize: '14px', marginTop: '1rem', fontFamily: 'monospace' }}>
+              <div className="border rounded-lg p-4 bg-gray-100 mt-8">
+                <h3 className="font-semibold mb-2">🧪 Test Info</h3>
+                <div className="text-xs font-mono space-y-1">
                   <div><strong>Payment ID:</strong> {testPaymentId}</div>
                   <div><strong>Order ID Hash:</strong> {keccak256(toHex(testPaymentId))}</div>
-                  {createHash && <div><strong>Transaction:</strong> <a href={`https://sepolia.basescan.org/tx/${createHash}`} target="_blank" rel="noopener noreferrer" style={{ color: '#0E76FD' }}>{createHash}</a></div>}
+                  {createHash && <div><strong>Transaction:</strong> <a href={`https://sepolia.basescan.org/tx/${createHash}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{createHash}</a></div>}
                 </div>
               </div>
             )}
 
             {/* Logs */}
             {logs.length > 0 && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem', background: '#1e1e1e', color: '#d4d4d4' }}>
-                <h3 style={{ color: '#fff' }}>📝 Test Logs</h3>
-                <div style={{ 
-                  fontSize: '12px', 
-                  marginTop: '1rem', 
-                  fontFamily: 'monospace',
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  padding: '1rem',
-                  background: '#0d0d0d',
-                  borderRadius: '8px'
-                }}>
+              <div className="border rounded-lg bg-gray-900 text-gray-300 mt-8 overflow-hidden">
+                <div className="p-4 bg-gray-800 border-b border-gray-700">
+                   <h3 className="text-white font-semibold">📝 Test Logs</h3>
+                </div>
+                <div className="p-4 font-mono text-xs max-h-[400px] overflow-y-auto space-y-1">
                   {logs.map((log, i) => (
-                    <div key={i} style={{ marginBottom: '4px' }}>
+                    <div key={i}>
                       {log}
                     </div>
                   ))}
@@ -331,12 +313,12 @@ export default function TestScenarios() {
             )}
 
             {/* Instructions */}
-            <div className={styles.resultCard} style={{ marginTop: '2rem', background: '#f0f9ff' }}>
-              <h3>📖 How to Use</h3>
+            <div className="border rounded-lg p-4 bg-blue-50 mt-8">
+              <h3 className="font-semibold mb-4">📖 How to Use</h3>
               
-              <div style={{ marginTop: '1rem' }}>
-                <h4 style={{ color: '#10b981' }}>✅ Testing Success Scenario:</h4>
-                <ol style={{ fontSize: '14px', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
+              <div className="mb-6">
+                <h4 className="text-green-700 font-medium mb-2">✅ Testing Success Scenario:</h4>
+                <ol className="list-decimal list-inside text-sm space-y-1 pl-2">
                   <li>Click "Test Success" to create a payment in escrow</li>
                   <li>Approve the transaction in your wallet</li>
                   <li>Wait for transaction to confirm</li>
@@ -346,22 +328,22 @@ export default function TestScenarios() {
                 </ol>
               </div>
 
-              <div style={{ marginTop: '1.5rem' }}>
-                <h4 style={{ color: '#f59e0b' }}>⚠️ Testing Failure Scenario:</h4>
-                <ol style={{ fontSize: '14px', lineHeight: '1.8', paddingLeft: '1.5rem' }}>
+              <div className="mb-6">
+                <h4 className="text-amber-700 font-medium mb-2">⚠️ Testing Failure Scenario:</h4>
+                <ol className="list-decimal list-inside text-sm space-y-1 pl-2">
                   <li>Click "Test Failure" to create a payment in escrow</li>
                   <li>Approve the transaction in your wallet</li>
                   <li>Wait for transaction to confirm</li>
                   <li>Payment stays in escrow (backend won't confirm it)</li>
                   <li>Wait 15 minutes</li>
-                  <li>Go to <a href="/test-escrow" style={{ color: '#667eea', fontWeight: 'bold' }}>Test Escrow page</a></li>
+                  <li>Go to <a href="/test-escrow" className="text-blue-600 hover:underline font-medium">Test Escrow page</a></li>
                   <li>Use the Payment ID to trigger a refund</li>
                 </ol>
               </div>
 
-              <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fef3c7', borderRadius: '8px' }}>
+              <div className="p-3 bg-amber-100 rounded-md text-sm">
                 <strong>💡 Pro Tip:</strong> Use the "Internal Transactions" button to verify:
-                <ul style={{ marginTop: '8px', fontSize: '14px', paddingLeft: '1.5rem' }}>
+                <ul className="list-disc list-inside mt-2 pl-2">
                   <li>Success scenario: Should see ETH transfer FROM escrow TO merchant</li>
                   <li>Failure scenario: No internal transactions (ETH stays locked)</li>
                 </ul>
@@ -373,4 +355,3 @@ export default function TestScenarios() {
     </div>
   );
 }
-

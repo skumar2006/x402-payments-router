@@ -2,107 +2,67 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Wallet } from 'lucide-react';
 
 export default function TopUpPage() {
   const params = useParams();
   const accountNumber = params.account_number as string;
   
   const [amount, setAmount] = useState('');
-  const [showAmount, setShowAmount] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleTopUp = () => {
-    const inputAmount = prompt('Enter amount to top up (USD):', '10');
-    
-    if (inputAmount && parseFloat(inputAmount) > 0) {
-      setAmount(inputAmount);
-      setShowAmount(true);
-      console.log(`Top-up request for account ${accountNumber}: $${inputAmount}`);
+  const handleTopUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (amount && parseFloat(amount) > 0) {
+      setShowSuccess(true);
+      console.log(`Top-up request for account ${accountNumber}: $${amount}`);
     }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '20px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        maxWidth: '500px',
-        width: '100%',
-        padding: '40px 30px',
-        textAlign: 'center',
-      }}>
-        <h1 style={{
-          fontSize: 'clamp(20px, 5vw, 28px)',
-          fontWeight: 700,
-          color: '#333',
-          marginBottom: '10px',
-        }}>
-          Account
-        </h1>
-        <p style={{
-          fontSize: 'clamp(12px, 3vw, 14px)',
-          color: '#666',
-          fontFamily: 'monospace',
-          wordBreak: 'break-all',
-          marginBottom: '40px',
-        }}>
-          {accountNumber}
-        </p>
-        
-        <button
-          onClick={handleTopUp}
-          style={{
-            width: '100%',
-            fontSize: 'clamp(20px, 5vw, 32px)',
-            fontWeight: 600,
-            padding: '25px',
-            border: 'none',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
-          }}
-        >
-          Top Up
-        </button>
-
-        {showAmount && (
-          <div style={{
-            marginTop: '30px',
-            padding: '20px',
-            background: '#d4edda',
-            borderRadius: '10px',
-            borderLeft: '4px solid #28a745',
-          }}>
-            <p style={{
-              fontSize: 'clamp(14px, 3.5vw, 18px)',
-              color: '#155724',
-              fontWeight: 600,
-              margin: 0,
-            }}>
-              ✅ Top-up request: ${amount}
-            </p>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="text-center">
+           <div className="mx-auto bg-blue-100 p-3 rounded-full w-fit mb-4">
+              <Wallet className="h-6 w-6 text-primary" />
+           </div>
+           <CardTitle className="text-2xl">Account Top Up</CardTitle>
+           <CardDescription className="font-mono text-xs break-all mt-2">
+              {accountNumber}
+           </CardDescription>
+        </CardHeader>
+        <CardContent>
+            {showSuccess ? (
+               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center text-green-800">
+                  <p className="font-medium text-lg">✅ Request Sent</p>
+                  <p className="text-sm mt-1">Top-up amount: ${amount}</p>
+               </div>
+            ) : (
+               <form onSubmit={handleTopUp} className="space-y-4">
+                  <div className="space-y-2">
+                     <Label htmlFor="amount">Amount (USD)</Label>
+                     <Input 
+                        id="amount"
+                        type="number" 
+                        placeholder="Enter amount" 
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        min="1"
+                        required
+                        className="text-lg h-12"
+                     />
+                  </div>
+                  <Button type="submit" className="w-full h-12 text-lg">
+                     Top Up
+                  </Button>
+               </form>
+            )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

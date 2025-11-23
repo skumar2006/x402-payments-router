@@ -6,7 +6,6 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { parseEther, formatEther, keccak256, toHex } from 'viem';
 import { escrowABI } from '@/lib/escrowABI';
 import { getEscrowContractAddress } from '@/lib/escrowUtils';
-import styles from '../page.module.css';
 
 export default function TestEscrow() {
   const { address, isConnected } = useAccount();
@@ -157,41 +156,36 @@ export default function TestEscrow() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div style={{ marginBottom: '1rem' }}>
+    <div className="min-h-screen p-4 md:p-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-sm p-6 border">
+        <div className="mb-4">
           <a 
             href="/"
-            style={{ 
-              color: '#667eea', 
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: 500
-            }}
+            className="text-blue-600 hover:underline text-sm font-medium"
           >
             ← Back to Main App
           </a>
         </div>
-        <h1 className={styles.title}>🧪 Escrow Contract Testing</h1>
-        <p className={styles.subtitle}>
+        <h1 className="text-2xl font-bold mb-2">🧪 Escrow Contract Testing</h1>
+        <p className="text-gray-600 mb-6">
           Test the X402 escrow contract functions
         </p>
 
         {/* Wallet Connection */}
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'center' }}>
+        <div className="mb-8 flex justify-center">
           <ConnectButton />
         </div>
 
         {!isConnected ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>
+          <p className="text-center text-gray-600">
             👆 Connect your wallet to test the escrow contract
           </p>
         ) : (
           <>
             {/* Contract Info */}
-            <div className={styles.resultCard} style={{ marginBottom: '2rem' }}>
-              <h3>📄 Contract Info</h3>
-              <div style={{ fontSize: '14px', marginTop: '1rem' }}>
+            <div className="border rounded-lg p-4 bg-gray-50 mb-8">
+              <h3 className="font-semibold mb-2">📄 Contract Info</h3>
+              <div className="text-sm space-y-1">
                 <div><strong>Contract:</strong> {escrowAddress}</div>
                 <div><strong>Merchant:</strong> {merchantWallet as string}</div>
                 <div><strong>Timeout:</strong> {timeout ? `${timeout.toString()} seconds (15 min)` : 'Loading...'}</div>
@@ -200,60 +194,56 @@ export default function TestEscrow() {
             </div>
 
             {/* Order ID Input */}
-            <div className={styles.formGroup}>
-              <label>Order ID (for testing)</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="mb-6 space-y-2">
+              <label className="block font-medium">Order ID (for testing)</label>
+              <div className="flex gap-2">
                 <input
                   type="text"
                   value={orderId}
                   onChange={(e) => setOrderId(e.target.value)}
                   placeholder="e.g., test-123 or payment-abc"
-                  className={styles.priceInput}
-                  style={{ flex: 1 }}
+                  className="flex-1 p-2 border rounded-md"
                 />
                 <button
                   onClick={generateRandomOrderId}
-                  className={styles.btnPrimary}
-                  style={{ width: 'auto', padding: '0 1rem' }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
                 >
                   🎲 Random
                 </button>
               </div>
-              <p className={styles.helperText}>
+              <p className="text-sm text-gray-500">
                 💡 Use a unique ID for each test payment
               </p>
             </div>
 
             {/* Create Payment */}
-            <div className={styles.formGroup}>
-              <label>Amount (ETH)</label>
+            <div className="mb-6 space-y-2">
+              <label className="block font-medium">Amount (ETH)</label>
               <input
                 type="text"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.01"
-                className={styles.priceInput}
+                className="w-full p-2 border rounded-md"
               />
               <button
                 onClick={handleCreatePayment}
                 disabled={isCreating || isCreateLoading || !orderId}
-                className={styles.btnPrimary}
-                style={{ marginTop: '0.5rem' }}
+                className="w-full py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium mt-2"
               >
                 {isCreating || isCreateLoading ? '⏳ Creating Payment...' : '💰 Create Payment (Lock ETH)'}
               </button>
-              <p className={styles.helperText}>
+              <p className="text-sm text-gray-500">
                 This locks your ETH in the escrow contract
               </p>
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '2rem' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
               <button
                 onClick={handleConfirmPayment}
                 disabled={isConfirming || isConfirmLoading || !orderId}
-                className={styles.btnPrimary}
-                style={{ background: '#10b981' }}
+                className="py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 font-medium"
               >
                 {isConfirming || isConfirmLoading ? '⏳ Confirming...' : '✅ Confirm Payment'}
               </button>
@@ -261,8 +251,7 @@ export default function TestEscrow() {
               <button
                 onClick={handleRefundPayment}
                 disabled={isRefunding || isRefundLoading || !orderId}
-                className={styles.btnPrimary}
-                style={{ background: '#f59e0b' }}
+                className="py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 disabled:opacity-50 font-medium"
               >
                 {isRefunding || isRefundLoading ? '⏳ Refunding...' : '↩️ Refund (After Timeout)'}
               </button>
@@ -271,26 +260,25 @@ export default function TestEscrow() {
             <button
               onClick={handleCheckPayment}
               disabled={!orderId}
-              className={styles.btnPrimary}
-              style={{ marginTop: '1rem', background: '#6366f1' }}
+              className="w-full py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 font-medium mt-4"
             >
               🔍 Check Payment Status
             </button>
 
             {/* Status */}
             {status && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem' }}>
-                <h3>📊 Status</h3>
-                <div style={{ fontSize: '14px', marginTop: '1rem', wordBreak: 'break-all' }}>
+              <div className="border rounded-lg p-4 bg-gray-50 mt-8">
+                <h3 className="font-semibold mb-2">📊 Status</h3>
+                <div className="text-sm break-all">
                   {status}
                 </div>
                 {lastTxHash && (
-                  <div style={{ marginTop: '1rem' }}>
+                  <div className="mt-2">
                     <a
                       href={`https://sepolia.basescan.org/tx/${lastTxHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#0E76FD', textDecoration: 'underline' }}
+                      className="text-blue-600 hover:underline"
                     >
                       View on BaseScan →
                     </a>
@@ -301,14 +289,14 @@ export default function TestEscrow() {
 
             {/* Payment Details */}
             {paymentData && (
-              <div className={styles.resultCard} style={{ marginTop: '2rem' }}>
-                <h3>💳 Payment Details</h3>
-                <div style={{ fontSize: '14px', marginTop: '1rem' }}>
+              <div className="border rounded-lg p-4 bg-gray-50 mt-8">
+                <h3 className="font-semibold mb-2">💳 Payment Details</h3>
+                <div className="text-sm space-y-2">
                   <div><strong>Payer:</strong> {paymentData[0]}</div>
                   <div><strong>Amount:</strong> {formatEther(paymentData[1])} ETH</div>
                   <div><strong>Timestamp:</strong> {new Date(Number(paymentData[2]) * 1000).toLocaleString()}</div>
                   <div><strong>Completed:</strong> {paymentData[3] ? '✅ Yes' : '❌ No'}</div>
-                  <div style={{ marginTop: '1rem', padding: '1rem', background: paymentData[3] ? '#d1fae5' : '#fef3c7', borderRadius: '8px' }}>
+                  <div className={`p-4 rounded-md ${paymentData[3] ? 'bg-green-100' : 'bg-amber-100'}`}>
                     {paymentData[3] ? (
                       '✅ This payment has been completed (confirmed or refunded)'
                     ) : (
@@ -320,15 +308,15 @@ export default function TestEscrow() {
             )}
 
             {/* Instructions */}
-            <div className={styles.resultCard} style={{ marginTop: '2rem', background: '#f0f9ff' }}>
-              <h3>📖 Testing Instructions</h3>
-              <ol style={{ fontSize: '14px', lineHeight: '1.8', paddingLeft: '1.5rem', margin: '1rem 0' }}>
+            <div className="border rounded-lg p-4 bg-blue-50 mt-8">
+              <h3 className="font-semibold mb-2">📖 Testing Instructions</h3>
+              <ol className="list-decimal list-inside text-sm space-y-2 text-gray-700">
                 <li><strong>Create Payment:</strong> Enter an order ID and amount, then click "Create Payment" to lock ETH in escrow</li>
                 <li><strong>Confirm Payment:</strong> Click "Confirm Payment" to release funds to the merchant (simulates successful agent completion)</li>
                 <li><strong>Refund:</strong> Wait 15 minutes after creating a payment, then click "Refund" to get your ETH back (simulates timeout)</li>
                 <li><strong>Check Status:</strong> Use "Check Payment Status" to see current payment details</li>
               </ol>
-              <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', marginTop: '1rem' }}>
+              <div className="p-3 bg-amber-100 rounded-md mt-4 text-sm">
                 <strong>⚠️ Note:</strong> This is for testing only! In production, only your backend should call confirmPayment.
               </div>
             </div>
@@ -338,4 +326,3 @@ export default function TestEscrow() {
     </div>
   );
 }
-
