@@ -43,6 +43,7 @@ export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [userWallet, setUserWallet] = useState<{ address: string; walletId: string } | null>(null);
   const [isSettingUp, setIsSettingUp] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
   
   // Purchase flow state
   const [query, setQuery] = useState('');
@@ -73,6 +74,7 @@ export default function Home() {
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSettingUp(true);
+    setSetupError(null);
 
     try {
       const response = await fetch('/api/user/wallet', {
@@ -90,10 +92,10 @@ export default function Home() {
         });
         console.log('✅ User wallet loaded:', data.wallet.address);
       } else {
-        alert('Error: ' + data.error);
+        setSetupError(data.error || 'Failed to create wallet');
       }
     } catch (error: any) {
-      alert('Failed to create wallet: ' + error.message);
+      setSetupError('Failed to create wallet: ' + error.message);
     } finally {
       setIsSettingUp(false);
     }
@@ -301,18 +303,30 @@ export default function Home() {
         alignItems="center" 
         backgroundColor="bg"
       >
-        <Box maxWidth="800px" width="100%">
+        <Box maxWidth="500px" width="100%">
           <ContentCard>
             <ContentCardBody>
-              <VStack gap={4}>
-                <Box>
-                  <Text font="display1" as="h1" color="fgPrimary">
-                    🤖 x402 Purchasing Agent
+              <VStack gap={6}>
+                <VStack gap={1}>
+                  <Text font="display2" as="h1" color="fgPrimary">
+                    x402 Purchasing Agent
                   </Text>
                   <Text font="body" color="fgMuted">
                     Enter your phone number to get started
                   </Text>
-                </Box>
+                </VStack>
+
+                {setupError && (
+                  <Banner
+                    variant="error"
+                    title="Setup Error"
+                    startIcon="error"
+                    startIconActive
+                    styleVariant="inline"
+                  >
+                    {setupError}
+                  </Banner>
+                )}
 
                 <form onSubmit={handlePhoneSubmit}>
                   <VStack gap={4}>
@@ -321,13 +335,17 @@ export default function Home() {
                       placeholder="+1234567890"
                       value={phoneNumber}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
-                      helperText="💡 We'll create a secure wallet for you using Coinbase CDP. Your wallet will be linked to this phone number."
+                      helperText="We'll create a secure wallet for you using Coinbase CDP. Your wallet will be linked to this phone number."
+                      startIcon="phone"
+                      startIconActive
                     />
 
                     <Button
                       type="submit"
                       variant="primary"
                       disabled={isSettingUp}
+                      loading={isSettingUp}
+                      width="100%"
                     >
                       {isSettingUp ? 'Creating Wallet...' : 'Continue'}
                     </Button>
@@ -350,25 +368,33 @@ export default function Home() {
       alignItems="center" 
       backgroundColor="bg"
     >
-      <Box maxWidth="800px" width="100%">
+      <Box maxWidth="500px" width="100%">
         <ContentCard>
           <ContentCardBody>
             <VStack gap={6}>
               {/* Header */}
               <HStack justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={4}>
-                <VStack>
-                  <Text font="display1" as="h1" color="fgPrimary">
-                    🤖 x402 Purchasing Agent
+                <VStack gap={1}>
+                  <Text font="title1" as="h1" color="fgPrimary">
+                    x402 Purchasing Agent
                   </Text>
                   <Text font="body" color="fgMuted">
                     Real USDC payments on Base Sepolia
                   </Text>
-                  <Text font="caption" color="fgMuted" marginTop={1}>
-                    📱 Wallet: {userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}
-                  </Text>
                 </VStack>
                 <ConnectButton />
               </HStack>
+              
+              <Box 
+                backgroundColor="bgElevation1" 
+                padding={3} 
+                borderRadius="300"
+              >
+                <HStack alignItems="center" gap={2}>
+                  <Text font="caption" color="fgMuted">Wallet:</Text>
+                  <Text font="caption" color="fgPrimary" mono>{userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}</Text>
+                </HStack>
+              </Box>
 
               {/* Pricing Info */}
               <Box 
@@ -408,25 +434,31 @@ export default function Home() {
                     placeholder="e.g., USB-C charger, headphones, laptop..."
                     value={query}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-                    helperText="💡 The agent will automatically look up the price for you!"
+                    helperText="The agent will automatically look up the price for you!"
+                    startIcon="search"
+                    startIconActive
                   />
 
-                  <HStack gap={3}>
-                    <Button type="submit" variant="primary" flexGrow={1}>
-                      Request Agent Service
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      flexGrow={1}
-                      onClick={() => {
-                        resetForm();
-                        setUserWallet(null);
-                        setPhoneNumber('');
-                      }}
-                    >
-                      Change Phone Number
-                    </Button>
+                  <HStack gap={3} flexWrap="wrap">
+                    <Box flexGrow={1} width={{ base: '100%', tablet: 'auto' }}>
+                      <Button type="submit" variant="primary" width="100%">
+                        Request Agent Service
+                      </Button>
+                    </Box>
+                    <Box flexGrow={1} width={{ base: '100%', tablet: 'auto' }}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        width="100%"
+                        onClick={() => {
+                          resetForm();
+                          setUserWallet(null);
+                          setPhoneNumber('');
+                        }}
+                      >
+                        Change Phone Number
+                      </Button>
+                    </Box>
                   </HStack>
                 </VStack>
               </form>
@@ -510,6 +542,7 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
             <Button 
               onClick={onPayNow}
               variant="primary"
+              width="100%"
             >
               💳 Pay {content.payment.breakdown.total} ETH
             </Button>
