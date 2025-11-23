@@ -71,7 +71,7 @@ export default function IntegrationsPage() {
   );
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center py-20">
+    <div className="fixed inset-0 flex items-center justify-center py-20" style={{ backgroundImage: 'url(/bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden flex flex-col h-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="relative flex items-center justify-center p-4 py-8  border-gray-100/50">
