@@ -39,3 +39,5 @@ CREATE INDEX IF NOT EXISTS idx_payment_id ON payments(payment_id);
 CREATE INDEX IF NOT EXISTS idx_user_phone ON payments(user_phone);
 CREATE INDEX IF NOT EXISTS idx_transaction_hash ON payments(transaction_hash);
 
+-- For additional migrations, see:
+-- - migrations/002_create_logs_table.sql (Transaction Logs)

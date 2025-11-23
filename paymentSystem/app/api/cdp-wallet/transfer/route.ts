@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Coinbase, Wallet } from '@coinbase/coinbase-sdk';
 import { getUserWallet } from '@/lib/userWallet';
 import { getEscrowContractAddress } from '@/lib/escrowUtils';
+import { logTransaction } from '@/lib/transactionLogger';
 
 const CDP_API_KEY_NAME = process.env.CDP_API_KEY_NAME || '';
 const CDP_API_KEY_SECRET = process.env.CDP_API_KEY_PRIVATE_KEY || '';
@@ -123,6 +124,25 @@ export async function POST(request: NextRequest) {
         destination: escrowAddress,
       });
 
+      // Log the wallet transfer
+      await logTransaction({
+        transactionType: 'wallet_transfer',
+        status: 'success',
+        transactionId: orderId,
+        transactionHash: txHash,
+        userIdentifier: normalizedPhone,
+        walletAddress: userWalletRecord.wallet_address,
+        amount: parseFloat(amount),
+        currency: assetSymbol,
+        description: `CDP wallet transfer to escrow`,
+        escrowOrderId: orderId,
+        metadata: {
+          phoneNumber: normalizedPhone,
+          walletId: userWalletRecord.wallet_id,
+          destination: escrowAddress,
+        },
+      });
+
       return NextResponse.json({
         success: true,
         transactionHash: txHash,
@@ -133,6 +153,26 @@ export async function POST(request: NextRequest) {
       });
     } catch (transferError: any) {
       console.error('❌ Transfer failed:', transferError);
+      
+      // Log the failed transfer
+      await logTransaction({
+        transactionType: 'wallet_transfer',
+        status: 'failed',
+        transactionId: orderId,
+        userIdentifier: normalizedPhone,
+        walletAddress: userWalletRecord.wallet_address,
+        amount: parseFloat(amount),
+        currency: assetSymbol,
+        description: `CDP wallet transfer failed`,
+        escrowOrderId: orderId,
+        errorMessage: transferError.message,
+        metadata: {
+          phoneNumber: normalizedPhone,
+          walletId: userWalletRecord.wallet_id,
+          destination: escrowAddress,
+        },
+      });
+      
       return NextResponse.json(
         { 
           error: 'Transfer failed', 
@@ -215,6 +255,26 @@ export async function PUT(request: NextRequest) {
     console.log('✅ Contract invocation completed:', {
       transactionHash: txHash,
       orderId,
+    });
+
+    // Log the escrow payment creation
+    await logTransaction({
+      transactionType: 'wallet_transfer',
+      status: 'success',
+      transactionId: orderId,
+      transactionHash: txHash,
+      userIdentifier: normalizedPhone,
+      walletAddress: userWalletRecord.wallet_address,
+      amount: parseFloat(amount),
+      currency: 'ETH',
+      description: `Escrow payment created via CDP wallet contract invocation`,
+      escrowOrderId: orderId,
+      metadata: {
+        phoneNumber: normalizedPhone,
+        walletId: userWalletRecord.wallet_id,
+        contractAddress: escrowAddress,
+        method: 'invokeContract',
+      },
     });
 
     return NextResponse.json({

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logTransaction } from '@/lib/transactionLogger';
 
 /**
  * Coinbase Onramp API - Create Apple Pay Order
@@ -133,6 +134,29 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Onramp order created:', data.id);
 
+    // Log the onramp order creation
+    await logTransaction({
+      transactionType: 'onramp_created',
+      status: 'pending',
+      transactionId: data.id,
+      userIdentifier: email,
+      walletAddress: destinationWalletAddress,
+      amount: parseFloat(data.purchase_amount || amount),
+      currency: data.purchase_currency || 'USD',
+      description: `Coinbase Onramp order created for ${assetSymbol} on ${network}`,
+      metadata: {
+        orderId: data.id,
+        partnerUserId: finalPartnerUserId,
+        phoneNumber: normalizedPhone,
+        email: email,
+        destinationWalletAddress: destinationWalletAddress,
+        network: network,
+        assetSymbol: assetSymbol,
+        paymentLinkUrl: data.payment_link_url,
+        orderStatus: data.status,
+      },
+    });
+
     // Return the payment link and order details
     return NextResponse.json({
       success: true,
@@ -195,6 +219,27 @@ export async function GET(request: NextRequest) {
         { error: 'Failed to get order status', details: data },
         { status: response.status }
       );
+    }
+
+    // If order is completed, log it
+    if (data.status === 'completed' || data.status === 'success') {
+      await logTransaction({
+        transactionType: 'onramp_completed',
+        status: 'success',
+        transactionId: data.id,
+        transactionHash: data.blockchain_tx_id || undefined,
+        walletAddress: data.destination_wallets?.[0]?.address,
+        amount: parseFloat(data.purchase_amount || '0'),
+        currency: data.purchase_currency || 'USD',
+        description: `Coinbase Onramp order completed`,
+        metadata: {
+          orderId: data.id,
+          orderStatus: data.status,
+          networkFee: data.network_fee,
+          coinbaseFee: data.coinbase_fee,
+          totalFee: data.total_fee,
+        },
+      });
     }
 
     return NextResponse.json({

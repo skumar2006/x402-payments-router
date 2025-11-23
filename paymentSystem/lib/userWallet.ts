@@ -1,5 +1,6 @@
 import { Coinbase, Wallet } from '@coinbase/coinbase-sdk';
 import { supabase } from './db';
+import { logTransaction } from './transactionLogger';
 
 const CDP_API_KEY_NAME = process.env.CDP_API_KEY_NAME || '';
 const CDP_API_KEY_SECRET = process.env.CDP_API_KEY_SECRET || '';
@@ -105,6 +106,20 @@ export async function getOrCreateUserWallet(phoneNumber: string): Promise<{
     console.log('✅ Created new wallet for user:', {
       phone: normalizedPhone,
       address: walletInfo.walletAddress,
+    });
+
+    // Log wallet creation
+    await logTransaction({
+      transactionType: 'wallet_created',
+      status: 'success',
+      userIdentifier: normalizedPhone,
+      walletAddress: walletInfo.walletAddress,
+      description: `New CDP wallet created for user`,
+      metadata: {
+        phoneNumber: normalizedPhone,
+        walletId: walletInfo.walletId,
+        network: NETWORK_ID,
+      },
     });
 
     return {

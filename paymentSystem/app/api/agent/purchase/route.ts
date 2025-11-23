@@ -5,6 +5,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 import { escrowABI } from '@/lib/escrowABI';
 import { generateOrderId, getEscrowContractAddress } from '@/lib/escrowUtils';
+import { logTransaction } from '@/lib/transactionLogger';
 
 // In-memory storage for payment verifications
 const pendingPayments = new Map();
@@ -149,6 +150,25 @@ export async function POST(request: NextRequest) {
     completedAt: Date.now(),
   });
 
+  // Log the payment completion
+  await logTransaction({
+    transactionType: 'payment_completed',
+    status: 'success',
+    transactionId: paymentId,
+    transactionHash: transactionHash,
+    amount: parseFloat(pendingPayment.totalAmount),
+    currency: 'ETH',
+    description: `Payment verified for: ${purchaseRequest.query}`,
+    escrowOrderId: pendingPayment.x402OrderId,
+    metadata: {
+      productQuery: purchaseRequest.query,
+      paymentProof: {
+        paymentId,
+        signature,
+      },
+    },
+  });
+
   // Execute the agent workflow (calls x402 agent with payment proof)
   const result = await executeAgentWorkflow(purchaseRequest, {
     paymentId: pendingPayment.x402PaymentId || paymentId,
@@ -165,21 +185,90 @@ export async function POST(request: NextRequest) {
     escrowStatus = 'confirmed';
     console.log('✅ x402 agent completed with Amazon Transaction ID:', result.transactionId);
     console.log('✅ x402 agent confirmed payment on-chain:', result.confirmationHash);
+    
+    // Log escrow confirmation
+    await logTransaction({
+      transactionType: 'escrow_confirmed',
+      status: 'success',
+      transactionId: paymentId,
+      transactionHash: result.confirmationHash,
+      amount: parseFloat(pendingPayment.totalAmount),
+      currency: 'ETH',
+      description: `Escrow confirmed - Purchase completed: ${purchaseRequest.query}`,
+      escrowOrderId: pendingPayment.x402OrderId,
+      agentTransactionId: result.transactionId,
+      metadata: {
+        productQuery: purchaseRequest.query,
+        amazonTransactionId: result.transactionId,
+        product: result.product,
+      },
+    });
   } else if (result.status === 'completed' && result.transactionId && !result.confirmationHash) {
     // Agent completed purchase but didn't confirm on-chain
     escrowStatus = 'no_confirmation';
     console.warn('⚠️  x402 agent completed purchase but did not confirm on-chain');
     console.warn('⚠️  Payment will remain in escrow and can be refunded after 5 minutes');
+    
+    // Log partial completion
+    await logTransaction({
+      transactionType: 'escrow_confirmed',
+      status: 'pending',
+      transactionId: paymentId,
+      transactionHash: transactionHash,
+      amount: parseFloat(pendingPayment.totalAmount),
+      currency: 'ETH',
+      description: `Purchase completed but escrow not confirmed: ${purchaseRequest.query}`,
+      escrowOrderId: pendingPayment.x402OrderId,
+      agentTransactionId: result.transactionId,
+      metadata: {
+        warning: 'Agent completed but did not confirm on-chain',
+        productQuery: purchaseRequest.query,
+        amazonTransactionId: result.transactionId,
+      },
+    });
   } else if (result.status === 'completed' && !result.transactionId) {
     // Agent completed but didn't return transaction ID
     escrowStatus = 'no_transaction_id';
     console.warn('⚠️  x402 agent completed but did not return Amazon transaction ID');
     console.warn('⚠️  Payment will remain in escrow and can be refunded after 5 minutes');
+    
+    // Log failure
+    await logTransaction({
+      transactionType: 'payment_failed',
+      status: 'failed',
+      transactionId: paymentId,
+      transactionHash: transactionHash,
+      amount: parseFloat(pendingPayment.totalAmount),
+      currency: 'ETH',
+      description: `Agent completed but no transaction ID: ${purchaseRequest.query}`,
+      escrowOrderId: pendingPayment.x402OrderId,
+      errorMessage: 'Agent did not return Amazon transaction ID',
+      metadata: {
+        productQuery: purchaseRequest.query,
+      },
+    });
   } else {
     // Agent didn't complete successfully
     escrowStatus = 'agent_failed';
     console.error('❌ x402 agent workflow failed');
     console.warn('⚠️  Payment will remain in escrow and can be refunded after 5 minutes');
+    
+    // Log failure
+    await logTransaction({
+      transactionType: 'payment_failed',
+      status: 'failed',
+      transactionId: paymentId,
+      transactionHash: transactionHash,
+      amount: parseFloat(pendingPayment.totalAmount),
+      currency: 'ETH',
+      description: `Agent workflow failed: ${purchaseRequest.query}`,
+      escrowOrderId: pendingPayment.x402OrderId,
+      errorMessage: 'x402 agent workflow failed',
+      metadata: {
+        productQuery: purchaseRequest.query,
+        agentResult: result,
+      },
+    });
   }
 
   // Return successful response with agent results
