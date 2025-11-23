@@ -26,6 +26,7 @@
     "framer-motion": "^12.23.24",
     "geist": "^1.5.1",
     "lucide-react": "^0.554.0",
+    "motion": "^12.23.24",
     "next": "^14.0.4",
     "pg": "^8.11.3",
     "pino-pretty": "^13.1.2",
