@@ -71,7 +71,7 @@ export default function IntegrationsPage() {
   );
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center py-20" style={{ backgroundImage: 'url(/bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="fixed inset-0 flex items-center justify-center py-20" style={{ backgroundImage: 'url(/bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} >
       <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden flex flex-col h-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="relative flex items-center justify-center p-4 py-8  border-gray-100/50">
@@ -131,7 +131,7 @@ export default function IntegrationsPage() {
           </div>
 
           {/* List */}
-          <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
+          <div className="flex-1 overflow-y-auto px-6 pb-32 space-y-4">
             {filteredIntegrations.map((integration) => (
               <div
                 key={integration.id}
