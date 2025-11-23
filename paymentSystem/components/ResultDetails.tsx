@@ -6,7 +6,7 @@ import { VStack } from '@coinbase/cds-web/layout/VStack';
 export const ResultDetails: React.FC<{ result: any }> = ({ result }) => {
   if (result.orderId) {
     return (
-      <VStack spacing="4px">
+      <VStack gap={1}>
         <Text>Order ID: {result.orderId}</Text>
         <Text>Product: {result.product.name}</Text>
         <Text>Price: {result.product.price}</Text>
@@ -17,7 +17,7 @@ export const ResultDetails: React.FC<{ result: any }> = ({ result }) => {
 
   if (result.results) {
     return (
-      <VStack spacing="4px">
+      <VStack gap={1}>
         <Text>Found {result.resultsCount} products:</Text>
         {result.results.map((r: any, i: number) => (
           <Text key={i}>
@@ -30,7 +30,7 @@ export const ResultDetails: React.FC<{ result: any }> = ({ result }) => {
 
   if (result.comparison) {
     return (
-      <VStack spacing="4px">
+      <VStack gap={1}>
         <Text>
           Recommendation: {result.recommendation}
         </Text>

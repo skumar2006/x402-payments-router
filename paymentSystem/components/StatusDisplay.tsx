@@ -22,30 +22,30 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ state, onPayNow, i
 
   return (
     <Box 
-      marginTop="24px" 
-      padding="16px" 
+      marginTop={6} 
+      padding={4} 
       borderRadius="large" 
       border="1px solid" 
-      borderColor={status === 'error' ? 'negative' : status === 'success' ? 'positive' : 'line'}
-      backgroundColor={status === 'error' ? 'negativeMuted' : status === 'success' ? 'positiveMuted' : 'background'}
+      borderColor={status === 'error' ? 'fgNegative' : status === 'success' ? 'fgPositive' : 'bgLine'}
+      backgroundColor={status === 'error' ? 'bgNegativeWash' : status === 'success' ? 'bgPositiveWash' : 'bg'}
     >
-      <VStack spacing="16px">
-        <Text variant="title3" fontWeight="bold">{statusTitle}</Text>
+      <VStack gap={4}>
+        <Text font="title3">{statusTitle}</Text>
         
         {(status === 'pending' || status === 'confirming_payment' || status === 'verifying_payment') && (
-          <Box display="flex" flexDirection="row" alignItems="center" gap="8px">
+          <Box display="flex" flexDirection="row" alignItems="center" gap={2}>
             <Spinner size="medium" color="foreground" />
             <Text>{statusMessage || 'Processing...'}</Text>
           </Box>
         )}
 
         {status === 'payment_required' && paymentData && (
-          <VStack spacing="16px">
+          <VStack gap={4}>
              <Box>
-               <Text fontWeight="bold">Payment ID: {paymentData.payment.id}</Text>
+               <Text font="label1">Payment ID: {paymentData.payment.id}</Text>
                <Text>Product Price: {paymentData.payment.breakdown.productPrice} ETH</Text>
                <Text>Agent Fee: {paymentData.payment.breakdown.agentFee} ETH</Text>
-               <Text variant="headline" color="primary">Total: {paymentData.payment.breakdown.total} ETH</Text>
+               <Text font="headline" color="fgPrimary">Total: {paymentData.payment.breakdown.total} ETH</Text>
                <Text>Network: Base Sepolia</Text>
              </Box>
 
@@ -55,7 +55,7 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ state, onPayNow, i
                 </Alert>
              ) : (
                <>
-                 <Text color="foregroundMuted">
+                 <Text color="fgMuted">
                    Send {paymentData.payment.breakdown.total} ETH to your CDP wallet.
                    Funds will be held in your secure wallet linked to your phone number.
                  </Text>
@@ -73,19 +73,19 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ state, onPayNow, i
         )}
 
         {status === 'success' && resultData && (
-          <VStack spacing="16px">
+          <VStack gap={4}>
              <Box>
                 <Tag intent="positive" size="medium">PAID</Tag>
-                <Box marginTop="8px">
+                <Box marginTop={2}>
                   <Text>Payment ID: {resultData.paymentId}</Text>
                   <Text>Amount: {resultData.amount} USDC</Text>
                 </Box>
              </Box>
              
              <Box>
-               <Text fontWeight="bold">🤖 Agent Result</Text>
+               <Text font="label1">🤖 Agent Result</Text>
                <Text>Status: {resultData.result.status}</Text>
-               <Box marginTop="8px">
+               <Box marginTop={2}>
                  <ResultDetails result={resultData.result} />
                </Box>
              </Box>
@@ -93,7 +93,7 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ state, onPayNow, i
         )}
 
         {status === 'error' && (
-          <Text color="negative">{error || 'An unknown error occurred'}</Text>
+          <Text color="fgNegative">{error || 'An unknown error occurred'}</Text>
         )}
       </VStack>
     </Box>

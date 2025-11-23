@@ -33,16 +33,16 @@ export const MainView: React.FC<MainViewProps> = ({
   agentFee,
 }) => {
   return (
-    <Box display="flex" justifyContent="center" padding="16px" minHeight="100vh">
+    <Box display="flex" justifyContent="center" padding={4} minHeight="100vh">
       <ContentCard width="100%" maxWidth="600px">
-        <Box padding="24px">
-          <VStack spacing="24px">
+        <Box padding={6}>
+          <VStack gap={6}>
             {/* Header */}
             <HStack justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Text variant="headline" fontWeight="bold">🤖 x402 Purchasing Agent</Text>
-                <Text color="foregroundMuted">Real USDC payments on Base Sepolia</Text>
-                <Text variant="label2" color="foregroundMuted" marginTop="4px">
+                <Text font="headline">🤖 x402 Purchasing Agent</Text>
+                <Text color="fgMuted">Real USDC payments on Base Sepolia</Text>
+                <Text font="label2" color="fgMuted" marginTop={1}>
                   📱 Wallet: {userWallet.address.slice(0, 6)}...{userWallet.address.slice(-4)}
                 </Text>
               </Box>
@@ -54,22 +54,22 @@ export const MainView: React.FC<MainViewProps> = ({
 
             {/* Form */}
             <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
-              <VStack spacing="16px">
+              <VStack gap={4}>
                 <Box>
                   <TextInput
                     label="What would you like to buy?"
                     value={purchaseState.query}
-                    onChange={(val) => onQueryChange(val)}
+                    onChange={(e) => onQueryChange(e.target.value)}
                     placeholder="e.g., USB-C charger, headphones, laptop..."
                     disabled={purchaseState.status !== 'idle' && purchaseState.status !== 'error'}
                     // multiline={true} // Assuming this prop exists or use NativeTextArea
                   />
-                  <Text variant="label2" color="foregroundMuted" marginTop="8px">
+                  <Text font="label2" color="fgMuted" marginTop={2}>
                     💡 The agent will automatically look up the price for you!
                   </Text>
                 </Box>
 
-                <HStack spacing="16px">
+                <HStack gap={4}>
                    <Box flex={1}>
                      <Button 
                        type="submit" 

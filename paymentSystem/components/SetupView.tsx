@@ -46,13 +46,13 @@ export const SetupView: React.FC<SetupViewProps> = ({ onWalletCreated }) => {
   };
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" padding="16px">
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" padding={4}>
       <ContentCard width="100%" maxWidth="480px">
-        <Box padding="24px">
-          <VStack spacing="16px">
+        <Box padding={6}>
+          <VStack gap={4}>
             <Box>
-              <Text variant="headline" fontWeight="bold">🤖 x402 Purchasing Agent</Text>
-              <Text variant="body" color="foregroundMuted">
+              <Text font="headline">🤖 x402 Purchasing Agent</Text>
+              <Text font="body" color="fgMuted">
                 Enter your phone number to get started
               </Text>
             </Box>
@@ -63,17 +63,17 @@ export const SetupView: React.FC<SetupViewProps> = ({ onWalletCreated }) => {
                 handlePhoneSubmit();
               }}
             >
-              <VStack spacing="16px">
+              <VStack gap={4}>
                 <TextInput
                   label="Phone Number"
                   id="phoneNumber"
                   value={phoneNumber}
-                  onChange={(value) => setPhoneNumber(value)}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+1234567890"
                   disabled={isSettingUp}
                   type="tel"
                 />
-                <Text variant="label2" color="foregroundMuted">
+                <Text font="label2" color="fgMuted">
                   💡 We'll create a secure wallet for you using Coinbase CDP.
                   Your wallet will be linked to this phone number.
                 </Text>
@@ -94,4 +94,3 @@ export const SetupView: React.FC<SetupViewProps> = ({ onWalletCreated }) => {
     </Box>
   );
 };
-
