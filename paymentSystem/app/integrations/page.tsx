@@ -25,7 +25,7 @@ const integrations: Integration[] = [
     title: "Auto-order Lunch",
     description: "Automatically orders your favorite lunch based on your calendar schedule and preferences.",
     category: "Food",
-    icon: <Image src="/uber.jpg" alt="Uber" width={20} height={20} className="rounded-sm" />,
+    icon: <Image src="/uber.jpg" alt="Uber" width={22} height={22} className="rounded-sm" />,
     color: "",
   },
   {
@@ -75,17 +75,21 @@ export default function IntegrationsPage() {
       <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden flex flex-col h-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="relative flex items-center justify-center p-4 py-8  border-gray-100/50">
-          <h1 className="text-xl font-normal tracking-tight font-averia">Integrations</h1>
-          <Link href="/" className="absolute right-4 top-1/2 -translate-y-1/2">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
+          <Link href="/" className="absolute left-4 top-1/2 -translate-y-1/2">
+            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 active:scale-[0.98]">
               <X className="h-5 w-5" />
             </button>
           </Link>
+          <h1 className="text-xl font-normal tracking-tight font-averia">Integrations</h1>
+          <Button className=" absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black hover:bg-black/90 text-white pr-4 pl-2.5 h-10 text-sm shrink-0 active:scale-[0.98]">
+            <Plus className="w-4 h-4 mr-0.3" />
+            Add
+          </Button>
         </div>
 
         {/* Content Container */}
-        <div className="flex flex-col h-full overflow-hidden">
-          {/* Filters and Add Button */}
+        <div className="relative flex flex-col h-full overflow-hidden">
+          {/* Filters */}
           <div className="px-6 py-4 flex flex-col gap-6">
             <div className="flex items-center justify-between">
               {/* Category Pills */}
@@ -112,19 +116,10 @@ export default function IntegrationsPage() {
                         />
                       )}
                       {cat}
-                      {cat === activeCategory && activeCategory !== "All" && (
-                        <span className="ml-2 inline-block w-1 h-1 rounded-full bg-black/20 align-middle mb-0.5" />
-                      )}
                     </button>
                   );
                 })}
               </div>
-
-              {/* Add Button */}
-              <Button className="rounded-full bg-black hover:bg-black/90 text-white pr-4 pl-2.5 h-8 text-sm shrink-0">
-                <Plus className="w-4 h-4 mr-0.3" />
-                Add
-              </Button>
             </div>
           </div>
 
@@ -133,27 +128,28 @@ export default function IntegrationsPage() {
             {filteredIntegrations.map((integration) => (
               <div
                 key={integration.id}
-                className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm cursor-pointer"
+                className="bg-white border border-gray-200 rounded-2xl p-4 cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-3">
-                    <div className={cn("mt-0.5", integration.color)}>
-                      {integration.icon}
-                    </div>
-                    <div className="space-y-1">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("flex items-center justify-center w-8 h-8", integration.color)}>
+                        {integration.icon}
+                      </div>
                       <h3 className="font-medium text-gray-900 leading-none">
                         {integration.title}
                       </h3>
-                      <p className="text-sm text-gray-500 leading-relaxed pr-4">
-                        {integration.description}
-                      </p>
                     </div>
+                    <p className="text-sm text-gray-500 leading-relaxed">
+                      {integration.description}
+                    </p>
                   </div>
                   <ChevronDown className="h-5 w-5 text-gray-300 flex-shrink-0 mt-0.5" />
                 </div>
               </div>
             ))}
           </div>
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent z-10" />
         </div>
       </div>
     </div>
