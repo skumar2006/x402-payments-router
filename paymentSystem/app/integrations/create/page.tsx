@@ -1,12 +1,15 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProgressiveBlur } from "@/components/core/progressive-blur";
 
 export default function CreateIntegrationPage() {
+  const [inputValue, setInputValue] = useState("");
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center py-20">
       <div className="bg-white w-full max-w-lg rounded-3xl overflow-hidden flex flex-col h-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
@@ -53,23 +56,33 @@ export default function CreateIntegrationPage() {
               </div>
             </div>
 
-            {/* Chat Messages Area (Empty for now) */}
-            <div className="flex flex-col gap-4">
-              {/* Messages would go here */}
-            </div>
-          </div>
-
-          {/* Chat Input Bar */}
-          <div className="p-4 border-t border-gray-100 bg-white">
+            {/* Chat Input Bar */}
             <div className="relative flex items-center">
               <input
                 type="text"
-                placeholder="Paste a URL to create an automation..."
-                className="w-full bg-gray-50 border-none rounded-full py-3 pl-4 pr-12 text-sm focus:ring-1 focus:ring-black/5 placeholder:text-gray-400"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Paste the site you want Flip to interact with..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pl-4 pr-12 text-sm placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus-visible:outline-none"
               />
-              <button className="absolute right-2 p-2 bg-black text-white rounded-full hover:bg-black/90 transition-colors active:scale-95">
-                <Send className="h-4 w-4" />
-              </button>
+              <AnimatePresence>
+                {inputValue.trim().length > 0 && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                    className="absolute right-2 p-2 bg-black text-white rounded-full hover:bg-black/90 transition-colors active:scale-95"
+                  >
+                    <Send className="h-4 w-4" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Chat Messages Area (Empty for now) */}
+            <div className="flex flex-col gap-4">
+              {/* Messages would go here */}
             </div>
           </div>
         </div>
