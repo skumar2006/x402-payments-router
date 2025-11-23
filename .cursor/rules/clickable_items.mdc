@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+whenever you create something clickable in this project, on active it must scale-[0.98]

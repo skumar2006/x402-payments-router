@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@coinbase/cds-web": "^8.21.8",
+    "framer-motion": "^12.23.24"
+  }
+}
