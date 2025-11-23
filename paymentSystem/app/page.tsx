@@ -8,7 +8,7 @@ import { escrowABI } from '@/lib/escrowABI';
 import { generateOrderId, getEscrowContractAddress } from '@/lib/escrowUtils';
 
 import { Button } from '@coinbase/cds-web/buttons';
-import { TextInput } from '@coinbase/cds-web/controls';
+import { TextInput, InputIcon } from '@coinbase/cds-web/controls';
 import { Text } from '@coinbase/cds-web/typography';
 import { ContentCard, ContentCardBody } from '@coinbase/cds-web/cards';
 import { Box, VStack, HStack, Divider } from '@coinbase/cds-web/layout';
@@ -301,7 +301,7 @@ export default function Home() {
         display="flex" 
         justifyContent="center" 
         alignItems="center" 
-        backgroundColor="bg"
+        background="bg"
       >
         <Box maxWidth="500px" width="100%">
           <ContentCard>
@@ -336,8 +336,7 @@ export default function Home() {
                       value={phoneNumber}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhoneNumber(e.target.value)}
                       helperText="We'll create a secure wallet for you using Coinbase CDP. Your wallet will be linked to this phone number."
-                      startIcon="phone"
-                      startIconActive
+                      start={<InputIcon name="phone" />}
                     />
 
                     <Button
@@ -366,7 +365,7 @@ export default function Home() {
       display="flex" 
       justifyContent="center" 
       alignItems="center" 
-      backgroundColor="bg"
+      background="bg"
     >
       <Box maxWidth="500px" width="100%">
         <ContentCard>
@@ -386,9 +385,9 @@ export default function Home() {
               </HStack>
               
               <Box 
-                backgroundColor="bgElevation1" 
+                background="bgElevation1" 
                 padding={3} 
-                borderRadius="300"
+                borderRadius={300}
               >
                 <HStack alignItems="center" gap={2}>
                   <Text font="caption" color="fgMuted">Wallet:</Text>
@@ -398,14 +397,15 @@ export default function Home() {
 
               {/* Pricing Info */}
               <Box 
-                backgroundColor="bgElevation1" 
+                background="bgElevation1" 
                 padding={4} 
-                borderRadius="400"
-                borderLeftWidth="300"
+                borderRadius={400}
+                borderedStart
+                borderStartWidth={300}
                 borderColor="bgPrimary"
               >
                 <VStack gap={3}>
-                  <Text font="title3" as="h3">💰 Payment Structure</Text>
+                  <Text font="title3" as="h3">Payment Structure</Text>
                   
                   <HStack justifyContent="space-between">
                     <Text color="fgMuted">Agent Service Fee (fixed)</Text>
@@ -420,8 +420,8 @@ export default function Home() {
                   <Divider />
                   
                   <HStack justifyContent="space-between">
-                    <Text font="headline" fontWeight="bold">Total x402 Payment</Text>
-                    <Text font="headline" fontWeight="bold">Agent Fee + Product Cost</Text>
+                    <Text font="headline">Total x402 Payment</Text>
+                    <Text font="headline">Agent Fee + Product Cost</Text>
                   </HStack>
                 </VStack>
               </Box>
@@ -435,8 +435,7 @@ export default function Home() {
                     value={query}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
                     helperText="The agent will automatically look up the price for you!"
-                    startIcon="search"
-                    startIconActive
+                    start={<InputIcon name="search" />}
                   />
 
                   <HStack gap={3} flexWrap="wrap">
@@ -472,7 +471,7 @@ export default function Home() {
                   startIconActive
                   styleVariant="inline"
                 >
-                   <Box marginTop={2}>
+                   <Box paddingTop={2}>
                     <StatusContent 
                       status={status} 
                       content={statusContent}
@@ -513,25 +512,25 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
     return (
       <VStack gap={4}>
         <Box 
-          backgroundColor="bg" 
+          background="bg" 
           padding={3} 
-          borderRadius="200" 
-          borderWidth="100" 
+          borderRadius={200}
+          bordered
           borderColor="bgLine"
         >
           <VStack gap={1}>
-            <Text><strong>Payment ID:</strong> {content.payment.id}</Text>
-            <Text><strong>Product Price:</strong> {content.payment.breakdown.productPrice} ETH</Text>
-            <Text><strong>Agent Fee:</strong> {content.payment.breakdown.agentFee} ETH</Text>
-            <Text><strong>Total Amount:</strong> <Text as="span" color="fgPrimary" font="headline">{content.payment.breakdown.total} ETH</Text></Text>
-            <Text><strong>Network:</strong> Base Sepolia</Text>
-            <Text><strong>Your Wallet:</strong> {content.userWalletAddress ? `${content.userWalletAddress.slice(0, 6)}...${content.userWalletAddress.slice(-4)}` : 'N/A'}</Text>
+            <Text><Text as="span" font="label1">Payment ID:</Text> {content.payment.id}</Text>
+            <Text><Text as="span" font="label1">Product Price:</Text> {content.payment.breakdown.productPrice} ETH</Text>
+            <Text><Text as="span" font="label1">Agent Fee:</Text> {content.payment.breakdown.agentFee} ETH</Text>
+            <Text><Text as="span" font="label1">Total Amount:</Text> <Text as="span" color="fgPrimary" font="headline">{content.payment.breakdown.total} ETH</Text></Text>
+            <Text><Text as="span" font="label1">Network:</Text> Base Sepolia</Text>
+            <Text><Text as="span" font="label1">Your Wallet:</Text> {content.userWalletAddress ? `${content.userWalletAddress.slice(0, 6)}...${content.userWalletAddress.slice(-4)}` : 'N/A'}</Text>
           </VStack>
         </Box>
 
         {!content.isConnected ? (
-          <Text color="fgNegative" fontWeight="bold">
-            ⚠️ Please connect your wallet above to pay
+          <Text color="fgNegative">
+            Please connect your wallet above to pay
           </Text>
         ) : (
           <VStack gap={3}>
@@ -544,7 +543,7 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
               variant="primary"
               width="100%"
             >
-              💳 Pay {content.payment.breakdown.total} ETH
+              Pay {content.payment.breakdown.total} ETH
             </Button>
           </VStack>
         )}
@@ -555,20 +554,20 @@ function StatusContent({ status, content, onPayNow }: { status: string; content:
   if (content.success) {
     return (
       <VStack gap={4}>
-        <Box backgroundColor="bg" padding={3} borderRadius="200">
+        <Box background="bg" padding={3} borderRadius={200}>
           <VStack gap={2}>
-            <Text font="headline" color="fgPrimary">✅ Payment Confirmed</Text>
+            <Text font="headline" color="fgPrimary">Payment Confirmed</Text>
             <Text>Payment ID: {content.paymentId}</Text>
             <Text>Amount: {content.amount} ETH</Text>
             <Box>
-              <Text backgroundColor="bgPositive" color="fgInverse" paddingX={2} paddingY={1} borderRadius="100" as="span">PAID</Text>
+              <Text background="bgPositive" color="fgInverse" paddingX={2} paddingY={1} borderRadius={100} as="span">PAID</Text>
             </Box>
           </VStack>
         </Box>
         
-        <Box backgroundColor="bg" padding={3} borderRadius="200">
+        <Box background="bg" padding={3} borderRadius={200}>
           <VStack gap={2}>
-            <Text font="headline" color="fgPrimary">🤖 Agent Result</Text>
+            <Text font="headline" color="fgPrimary">Agent Result</Text>
             <Text>Status: {content.result.status}</Text>
             <ResultDetails result={content.result} />
           </VStack>

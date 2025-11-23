@@ -12,7 +12,7 @@ import { Text } from '@coinbase/cds-web/typography';
 import { ContentCard, ContentCardBody } from '@coinbase/cds-web/cards';
 import { Box, VStack, HStack, Divider } from '@coinbase/cds-web/layout';
 import { Banner } from '@coinbase/cds-web/banner/Banner';
-import { Link } from '@coinbase/cds-web/navigation';
+import { Link } from '@coinbase/cds-web/typography/Link';
 
 export default function TestEscrow() {
   const { address, isConnected } = useAccount();
@@ -169,7 +169,7 @@ export default function TestEscrow() {
       display="flex" 
       justifyContent="center" 
       alignItems="center" 
-      backgroundColor="bg"
+      background="bg"
     >
       <Box maxWidth="800px" width="100%">
         <ContentCard>

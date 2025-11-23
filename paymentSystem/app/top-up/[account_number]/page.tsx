@@ -32,7 +32,7 @@ export default function TopUpPage() {
       display="flex" 
       justifyContent="center" 
       alignItems="center" 
-      backgroundColor="bg"
+      background="bg"
     >
       <Box maxWidth="500px" width="100%">
         <ContentCard>
@@ -72,7 +72,7 @@ export default function TopUpPage() {
                   startIconActive
                   styleVariant="inline"
                 >
-                  <Text fontWeight="bold">
+                  <Text>
                     ✅ Top-up request: ${submittedAmount}
                   </Text>
                 </Banner>
