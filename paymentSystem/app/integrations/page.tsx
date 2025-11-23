@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { X, ChevronDown, Plus, ShoppingBag, Utensils, Car, Shirt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,6 +64,7 @@ const integrations: Integration[] = [
 
 export default function IntegrationsPage() {
   const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const categories: Category[] = ["All", "Food", "Transport", "Clothes", "Shopping"];
 
   const filteredIntegrations = integrations.filter(
     (item) => activeCategory === "All" || item.category === activeCategory
@@ -87,29 +89,40 @@ export default function IntegrationsPage() {
           <div className="px-6 py-4 flex flex-col gap-6">
             <div className="flex items-center justify-between">
               {/* Category Pills */}
-              <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide no-scrollbar mask-gradient pr-4">
-                {["All", "Food", "Transport", "Clothes", "Shopping"].map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat as Category)}
-                    className={cn(
-                      "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200",
-                      activeCategory === cat
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-                    )}
-                  >
-                    {cat}
-                    {cat === activeCategory && activeCategory !== "All" && (
-                       <span className="ml-2 inline-block w-1 h-1 rounded-full bg-black/20 align-middle mb-0.5" />
-                    )}
-                  </button>
-                ))}
+              <div className="relative flex items-center gap-1 overflow-x-auto scrollbar-hide no-scrollbar mask-gradient pr-4">
+                {categories.map((cat) => {
+                  const isActive = activeCategory === cat;
+                  
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveCategory(cat as Category)}
+                      className={cn(
+                        "relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-150 z-10",
+                        isActive
+                          ? "text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                      )}
+                    >
+                      {isActive && (
+                        <motion.div 
+                          layoutId="activeTab"
+                          className="absolute inset-0 -z-10 rounded-full bg-gray-100"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                      {cat}
+                      {cat === activeCategory && activeCategory !== "All" && (
+                        <span className="ml-2 inline-block w-1 h-1 rounded-full bg-black/20 align-middle mb-0.5" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Add Button */}
-              <Button className="rounded-full bg-black hover:bg-black/90 text-white px-4 h-8 text-sm shrink-0">
-                <Plus className="w-4 h-4 mr-1.5" />
+              <Button className="rounded-full bg-black hover:bg-black/90 text-white pr-4 pl-2.5 h-8 text-sm shrink-0">
+                <Plus className="w-4 h-4 mr-0.3" />
                 Add
               </Button>
             </div>
